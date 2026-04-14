@@ -1,0 +1,35 @@
+{
+  "name": "musictools",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "typescript": "~6.0.2",
+    "vite": "^8.0.4"
+  },
+  "dependencies": {
+    "@react-three/drei": "^10.7.7",
+    "@react-three/fiber": "^9.6.0",
+    "@tailwindcss/vite": "^4.2.2",
+    "@types/canvas-confetti": "^1.9.0",
+    "@types/d3": "^7.4.3",
+    "@types/three": "^0.183.1",
+    "@vitejs/plugin-react": "^6.0.1",
+    "canvas-confetti": "^1.9.4",
+    "d3": "^7.9.0",
+    "framer-motion": "^12.38.0",
+    "lucide-react": "^1.8.0",
+    "react-router-dom": "^7.14.1",
+    "tailwindcss": "^4.2.2",
+    "three": "^0.183.2",
+    "tone": "^15.1.22",
+    "zustand": "^5.0.12"
+  }
+}
