@@ -36,9 +36,30 @@ const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 
 function freqToNote(freq: number): string {
   const midi = Math.round(12 * Math.log2(freq / 440) + 69);
   const note = NOTE_NAMES[((midi % 12) + 12) % 12];
-  const octave = Math.floor(midi / 12) - 1;
-  return `${note}${octave}`;
+  const oct = Math.floor(midi / 12) - 1;
+  return `${note}${oct}`;
 }
+
+// T1: logarithmic frequency knob mapping
+const FREQ_MIN = 20;
+const FREQ_MAX = 8000;
+const freqToKnob = (f: number) => Math.log(f / FREQ_MIN) / Math.log(FREQ_MAX / FREQ_MIN);
+const knobToFreq = (k: number) => FREQ_MIN * Math.pow(FREQ_MAX / FREQ_MIN, k);
+
+// T2: note buttons C2–C7, white keys only (42 notes)
+const WHITE_NAMES = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+const WHITE_SEMITONES = [0, 2, 4, 5, 7, 9, 11];
+function noteToFreq(name: string, octN: number): number {
+  const semi = WHITE_SEMITONES[WHITE_NAMES.indexOf(name)];
+  const midi = (octN + 1) * 12 + semi;
+  return 440 * Math.pow(2, (midi - 69) / 12);
+}
+const NOTE_BUTTONS = Array.from({ length: 6 }, (_, i) =>
+  WHITE_NAMES.map(n => ({ label: `${n}${i + 2}`, freq: noteToFreq(n, i + 2) }))
+).flat();
+
+// T3: key map (semitone offsets from C in current octave)
+const KEY_MAP: Record<string, number> = { a: 0, s: 2, d: 4, f: 5, g: 7, h: 9, j: 11, k: 12 };
 
 // ─── SVG Rotary Knob ──────────────────────────────────────────────────────────
 
@@ -141,6 +162,7 @@ export default function Oscilloscope() {
   const [playing, setPlaying] = useState(false);
   const [lissajous, setLissajous] = useState(false);
   const [frequency, setFrequency] = useState(440);
+  const [octave, setOctave] = useState(4); // T3/T4
   const [oscs, setOscs] = useState<OscState[]>([
     { ...DEFAULT_OSC, type: 'sine' },
     { ...DEFAULT_OSC, type: 'square', mix: 0.3 },
@@ -361,6 +383,23 @@ export default function Oscilloscope() {
     }
   }, [lfo, applyLFOTarget]);
 
+  // T3: keyboard input
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.repeat) return;
+      const k = e.key.toLowerCase();
+      if (k === 'z') { setOctave(o => Math.max(1, o - 1)); return; }
+      if (k === 'x') { setOctave(o => Math.min(7, o + 1)); return; }
+      const semi = KEY_MAP[k];
+      if (semi !== undefined) {
+        const midi = (octave + 1) * 12 + semi;
+        setFrequency(440 * Math.pow(2, (midi - 69) / 12));
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [octave]);
+
   const togglePlay = async () => {
     if (!playing) {
       await buildGraph();
@@ -400,8 +439,15 @@ export default function Oscilloscope() {
             <span style={s.freqHz}>{frequency.toFixed(1)} Hz</span>
             <span style={s.freqNote}>{freqToNote(frequency)}</span>
           </div>
-          <Knob value={frequency} min={20} max={2000} label="FREQ" unit="Hz" size={52}
-            onChange={v => setFrequency(Math.round(v))} />
+          {/* T4: octave display + buttons */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <button style={{ ...s.typeBtn, padding: '2px 6px', fontSize: 10, cursor: 'pointer' }} onClick={() => setOctave(o => Math.max(1, o - 1))}>−</button>
+            <span style={{ color: '#a855f7', fontSize: 10, fontFamily: 'monospace', letterSpacing: 1, minWidth: 56, textAlign: 'center' }}>Octave {octave}</span>
+            <button style={{ ...s.typeBtn, padding: '2px 6px', fontSize: 10, cursor: 'pointer' }} onClick={() => setOctave(o => Math.min(7, o + 1))}>+</button>
+          </div>
+          {/* T1: logarithmic freq knob */}
+          <Knob value={freqToKnob(frequency)} min={0} max={1} label="FREQ" unit="Hz" size={52}
+            onChange={v => setFrequency(Math.round(knobToFreq(v)))} />
           <button style={{ ...s.btn, ...(playing ? s.btnActive : {}) }} onClick={togglePlay}>
             {playing ? '■ STOP' : '▶ PLAY'}
           </button>
@@ -409,6 +455,18 @@ export default function Oscilloscope() {
             onClick={() => setLissajous(l => !l)}>
             {lissajous ? 'LISSAJOUS' : 'WAVEFORM'}
           </button>
+        </div>
+
+        {/* T2: note buttons C2–C7 white keys */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3, maxHeight: 80, overflowY: 'auto', marginTop: 6, marginBottom: 4 }}>
+          {NOTE_BUTTONS.map(({ label, freq }) => (
+            <button key={label} onClick={() => setFrequency(freq)} style={{
+              background: Math.abs(frequency - freq) < 0.5 ? '#a855f7' : 'transparent',
+              border: '1px solid #1a4a1a', color: Math.abs(frequency - freq) < 0.5 ? '#fff' : '#00cc33',
+              padding: '2px 6px', fontSize: 10, fontFamily: 'monospace',
+              cursor: 'pointer', borderRadius: 2,
+            }}>{label}</button>
+          ))}
         </div>
 
         {/* Oscillators */}

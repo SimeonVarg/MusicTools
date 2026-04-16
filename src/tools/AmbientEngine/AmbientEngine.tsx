@@ -79,35 +79,38 @@ function markovNext(matrix: number[][], state: number): number {
 const PRESETS: Preset[] = [
   {
     name: 'Deep Space', emoji: '🌌',
-    bg: 'from-indigo-950 via-purple-950 to-black',
+    bg: 'linear-gradient(to bottom right, #1e1b4b, #3b0764, #000)',
     colors: [0.3, 0.1, 1.0],
     params: { key: 'D', scale: 'minor', density: 'sparse', tempo: 45, reverb: 0.9, complexity: 0.3 },
   },
   {
     name: 'Forest Rain', emoji: '🌿',
-    bg: 'from-green-950 via-emerald-900 to-black',
+    bg: 'linear-gradient(to bottom right, #052e16, #064e3b, #000)',
     colors: [0.1, 0.8, 0.3],
     params: { key: 'G', scale: 'pentatonic', density: 'medium', tempo: 60, reverb: 0.7, complexity: 0.5 },
   },
   {
     name: 'Jazz Club', emoji: '🎷',
-    bg: 'from-amber-950 via-orange-900 to-black',
+    bg: 'linear-gradient(to bottom right, #451a03, #7c2d12, #000)',
     colors: [1.0, 0.6, 0.1],
     params: { key: 'F', scale: 'lydian', density: 'dense', tempo: 100, reverb: 0.4, complexity: 0.8 },
   },
   {
     name: 'Underwater', emoji: '🌊',
-    bg: 'from-cyan-950 via-blue-900 to-black',
+    bg: 'linear-gradient(to bottom right, #083344, #1e3a5f, #000)',
     colors: [0.0, 0.7, 0.9],
     params: { key: 'A', scale: 'whole-tone', density: 'sparse', tempo: 50, reverb: 0.95, complexity: 0.4 },
   },
   {
     name: 'Sunrise', emoji: '🌅',
-    bg: 'from-rose-950 via-orange-800 to-amber-900',
+    bg: 'linear-gradient(to bottom right, #4c0519, #9a3412, #78350f)',
     colors: [1.0, 0.4, 0.2],
     params: { key: 'E', scale: 'major', density: 'medium', tempo: 75, reverb: 0.6, complexity: 0.6 },
   },
 ];
+
+const DEGREE_NAMES = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
+const DEGREE_COLORS = ['#f87171', '#fb923c', '#facc15', '#4ade80', '#38bdf8', '#a78bfa', '#f472b6'];
 
 // ─── Particle System (Three.js via R3F) ───────────────────────────────────────
 
@@ -206,7 +209,7 @@ function WaveformDisplay({ analyser }: { analyser: Tone.Analyser | null }) {
       ref={canvasRef}
       width={600}
       height={80}
-      className="w-full h-20 rounded-lg bg-black/40"
+      style={{ width: '100%', height: 80, borderRadius: 8, background: 'rgba(0,0,0,0.4)' }}
     />
   );
 }
@@ -220,6 +223,8 @@ export default function AmbientEngine() {
   const [activePreset, setActivePreset] = useState(0);
   const [amplitude, setAmplitude] = useState(0);
   const [particleColors, setParticleColors] = useState<[number, number, number]>(PRESETS[0].colors);
+  const [currentDegree, setCurrentDegree] = useState(0);
+  const [recentDegrees, setRecentDegrees] = useState<number[]>([]);
 
   // Tone.js refs
   const droneRef = useRef<Tone.Synth | null>(null);
@@ -317,8 +322,11 @@ export default function AmbientEngine() {
       (time) => {
         if (Math.random() > (density === 'sparse' ? 0.4 : density === 'medium' ? 0.6 : 0.8)) return;
         markovStateRef.current = markovNext(matrix, markovStateRef.current);
-        const note = scaleNotes2[markovStateRef.current % scaleNotes2.length];
+        const deg = markovStateRef.current % scaleNotes2.length;
+        const note = scaleNotes2[deg];
         melody.triggerAttackRelease(note, '8n', time);
+        setCurrentDegree(deg);
+        setRecentDegrees(prev => [deg, ...prev].slice(0, 7));
       },
       [null],
       melodyInterval,
@@ -447,63 +455,97 @@ export default function AmbientEngine() {
   const bg = PRESETS[activePreset].bg;
 
   return (
-    <div className={`min-h-screen bg-gradient-to-br ${bg} text-white font-sans`}>
+    <div style={{ minHeight: '100vh', background: bg, color: '#fff', fontFamily: 'system-ui, sans-serif' }}>
       {/* Three.js Background */}
-      <div className="fixed inset-0 pointer-events-none">
+      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, pointerEvents: 'none' }}>
         <Canvas camera={{ position: [0, 0, 15], fov: 60 }}>
           <ambientLight intensity={0.5} />
           <Particles amplitude={amplitude} colors={particleColors} />
         </Canvas>
       </div>
 
-      <div className="relative z-10 max-w-4xl mx-auto px-4 py-8 space-y-8">
+      <div style={{ position: 'relative', zIndex: 10, maxWidth: 896, margin: '0 auto', padding: '32px 16px', display: 'flex', flexDirection: 'column', gap: 32 }}>
         {/* Header */}
-        <div className="text-center">
-          <h1 className="text-4xl font-bold tracking-tight">Ambient Engine</h1>
-          <p className="text-white/60 mt-1">Generative ambient music · procedurally evolving</p>
+        <div style={{ textAlign: 'center' }}>
+          <h1 style={{ fontSize: 36, fontWeight: 'bold', letterSpacing: '-0.025em' }}>Ambient Engine</h1>
+          <p style={{ color: 'rgba(255,255,255,0.6)', marginTop: 4 }}>Generative ambient music · procedurally evolving</p>
         </div>
 
         {/* Mood Presets */}
-        <div className="grid grid-cols-5 gap-3">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12 }}>
           {PRESETS.map((p, i) => (
             <button
               key={p.name}
               onClick={() => handlePreset(i)}
-              className={`rounded-2xl p-4 flex flex-col items-center gap-2 transition-all border-2 ${
-                activePreset === i
-                  ? 'border-white/60 bg-white/20 scale-105'
-                  : 'border-white/10 bg-white/5 hover:bg-white/10'
-              }`}
+              style={{
+                borderRadius: 16, padding: 16, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
+                transition: 'all 0.2s', cursor: 'pointer', color: '#fff',
+                border: activePreset === i ? '2px solid rgba(255,255,255,0.6)' : '2px solid rgba(255,255,255,0.1)',
+                background: activePreset === i ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.05)',
+                transform: activePreset === i ? 'scale(1.05)' : 'scale(1)',
+              }}
             >
-              <span className="text-3xl">{p.emoji}</span>
-              <span className="text-xs font-medium text-center leading-tight">{p.name}</span>
+              <span style={{ fontSize: 30 }}>{p.emoji}</span>
+              <span style={{ fontSize: 12, fontWeight: 500, textAlign: 'center', lineHeight: 1.2 }}>{p.name}</span>
             </button>
           ))}
         </div>
 
         {/* Waveform */}
-        <WaveformDisplay analyser={analyserRef.current} />
+        <div style={{ position: 'relative' }}>
+          <WaveformDisplay analyser={analyserRef.current} />
+          {playing && (
+            <div style={{
+              position: 'absolute', top: 8, right: 8, background: 'rgba(255,255,255,0.15)',
+              backdropFilter: 'blur(8px)', borderRadius: 8, padding: '4px 10px',
+              fontSize: 14, fontWeight: 'bold', color: '#a855f7',
+            }}>
+              Now playing: {DEGREE_NAMES[currentDegree % DEGREE_NAMES.length]}
+            </div>
+          )}
+          {/* Scale Degree Strip */}
+          <div style={{ display: 'flex', gap: 4, marginTop: 8, justifyContent: 'center' }}>
+            {DEGREE_NAMES.map((r, i) => {
+              const recency = recentDegrees.indexOf(i);
+              const opacity = recency === 0 ? 1 : recency === 1 ? 0.6 : recency === 2 ? 0.3 : 0.1;
+              const isActive = currentDegree === i && playing;
+              return (
+                <div key={i} style={{
+                  width: 32, height: 32, borderRadius: 4,
+                  background: isActive ? '#a855f7' : '#1e1e2e',
+                  border: `1px solid ${isActive ? '#a855f7' : '#333'}`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: isActive ? '#fff' : `rgba(168,85,247,${opacity})`,
+                  fontSize: 11, fontWeight: 600,
+                  transition: 'all 0.3s ease',
+                }}>
+                  {r}
+                </div>
+              );
+            })}
+          </div>
+        </div>
 
         {/* Controls */}
-        <div className="bg-white/5 backdrop-blur rounded-2xl p-6 space-y-5 border border-white/10">
+        <div style={{ background: 'rgba(255,255,255,0.05)', backdropFilter: 'blur(8px)', borderRadius: 16, padding: 24, display: 'flex', flexDirection: 'column', gap: 20, border: '1px solid rgba(255,255,255,0.1)' }}>
           {/* Key + Scale */}
-          <div className="grid grid-cols-2 gap-4">
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
             <div>
-              <label className="text-xs text-white/60 uppercase tracking-wider">Key</label>
+              <label style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Key</label>
               <select
                 value={params.key}
                 onChange={e => updateParam('key', e.target.value as KeyName)}
-                className="mt-1 w-full bg-white/10 rounded-lg px-3 py-2 text-sm border border-white/20 focus:outline-none"
+                style={{ marginTop: 4, width: '100%', background: 'rgba(255,255,255,0.1)', borderRadius: 8, padding: '8px 12px', fontSize: 14, border: '1px solid rgba(255,255,255,0.2)', color: '#fff', outline: 'none' }}
               >
                 {KEYS.map(k => <option key={k} value={k}>{k}</option>)}
               </select>
             </div>
             <div>
-              <label className="text-xs text-white/60 uppercase tracking-wider">Scale</label>
+              <label style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Scale</label>
               <select
                 value={params.scale}
                 onChange={e => updateParam('scale', e.target.value as ScaleName)}
-                className="mt-1 w-full bg-white/10 rounded-lg px-3 py-2 text-sm border border-white/20 focus:outline-none"
+                style={{ marginTop: 4, width: '100%', background: 'rgba(255,255,255,0.1)', borderRadius: 8, padding: '8px 12px', fontSize: 14, border: '1px solid rgba(255,255,255,0.2)', color: '#fff', outline: 'none' }}
               >
                 {(Object.keys(SCALE_INTERVALS) as ScaleName[]).map(s => (
                   <option key={s} value={s}>{s}</option>
@@ -514,15 +556,18 @@ export default function AmbientEngine() {
 
           {/* Density */}
           <div>
-            <label className="text-xs text-white/60 uppercase tracking-wider">Density</label>
-            <div className="mt-1 flex gap-2">
+            <label style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Density</label>
+            <div style={{ marginTop: 4, display: 'flex', gap: 8 }}>
               {(['sparse', 'medium', 'dense'] as Density[]).map(d => (
                 <button
                   key={d}
                   onClick={() => updateParam('density', d)}
-                  className={`flex-1 py-2 rounded-lg text-sm capitalize transition-all ${
-                    params.density === d ? 'bg-white/30 font-semibold' : 'bg-white/10 hover:bg-white/20'
-                  }`}
+                  style={{
+                    flex: 1, padding: '8px 0', borderRadius: 8, fontSize: 14, textTransform: 'capitalize',
+                    transition: 'all 0.2s', border: 'none', cursor: 'pointer', color: '#fff',
+                    background: params.density === d ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.1)',
+                    fontWeight: params.density === d ? 600 : 400,
+                  }}
                 >
                   {d}
                 </button>
@@ -537,7 +582,7 @@ export default function AmbientEngine() {
             { key: 'complexity', label: 'Harmonic Complexity', min: 0, max: 1, step: 0.01 },
           ] as { key: keyof Params; label: string; min: number; max: number; step: number }[]).map(({ key, label, min, max, step }) => (
             <div key={key}>
-              <div className="flex justify-between text-xs text-white/60 uppercase tracking-wider mb-1">
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>
                 <span>{label}</span>
                 <span>{typeof params[key] === 'number' ? (params[key] as number).toFixed(key === 'tempo' ? 0 : 2) : params[key]}</span>
               </div>
@@ -548,42 +593,47 @@ export default function AmbientEngine() {
                 step={step}
                 value={params[key] as number}
                 onChange={e => updateParam(key, parseFloat(e.target.value) as Params[typeof key])}
-                className="w-full accent-white/80"
+                style={{ width: '100%', accentColor: 'rgba(255,255,255,0.8)' }}
               />
             </div>
           ))}
         </div>
 
         {/* Play / Record */}
-        <div className="flex gap-4 justify-center">
+        <div style={{ display: 'flex', gap: 16, justifyContent: 'center' }}>
           <button
             onClick={handlePlay}
-            className={`px-10 py-4 rounded-full text-lg font-bold transition-all shadow-lg ${
-              playing
-                ? 'bg-red-500 hover:bg-red-600 shadow-red-500/30'
-                : 'bg-white text-black hover:bg-white/90 shadow-white/20'
-            }`}
+            style={{
+              padding: '16px 40px', borderRadius: 9999, fontSize: 18, fontWeight: 'bold',
+              transition: 'all 0.2s', cursor: 'pointer', border: 'none',
+              boxShadow: playing ? '0 10px 15px -3px rgba(239,68,68,0.3)' : '0 10px 15px -3px rgba(255,255,255,0.2)',
+              background: playing ? '#ef4444' : '#fff',
+              color: playing ? '#fff' : '#000',
+            }}
           >
             {playing ? '⏹ Stop' : '▶ Play'}
           </button>
           <button
             onClick={handleRecord}
             disabled={!playing}
-            className={`px-8 py-4 rounded-full text-lg font-bold transition-all shadow-lg disabled:opacity-40 ${
-              recording
-                ? 'bg-red-600 animate-pulse shadow-red-600/40'
-                : 'bg-white/20 hover:bg-white/30 border border-white/30'
-            }`}
+            style={{
+              padding: '16px 32px', borderRadius: 9999, fontSize: 18, fontWeight: 'bold',
+              transition: 'all 0.2s', cursor: playing ? 'pointer' : 'default',
+              opacity: !playing ? 0.4 : 1,
+              background: recording ? '#dc2626' : 'rgba(255,255,255,0.2)',
+              color: '#fff',
+              border: recording ? 'none' : '1px solid rgba(255,255,255,0.3)',
+              boxShadow: recording ? '0 10px 15px -3px rgba(220,38,38,0.4)' : '0 10px 15px -3px rgba(0,0,0,0.1)',
+            }}
           >
             {recording ? '⏺ Stop Rec' : '⏺ Record'}
           </button>
         </div>
 
         {/* Amplitude indicator */}
-        <div className="h-1 rounded-full bg-white/10 overflow-hidden">
+        <div style={{ height: 4, borderRadius: 9999, background: 'rgba(255,255,255,0.1)', overflow: 'hidden' }}>
           <div
-            className="h-full bg-white/60 transition-all duration-75"
-            style={{ width: `${amplitude * 100}%` }}
+            style={{ height: '100%', background: 'rgba(255,255,255,0.6)', transition: 'all 75ms', width: `${amplitude * 100}%` }}
           />
         </div>
       </div>

@@ -58,6 +58,29 @@ const TENSION_SCORE: Record<Quality, number> = {
   alt: 9, sus2: 2, sus4: 3,
 };
 
+const INTERVAL_TENSION = [0, 0.9, 0.3, 0.5, 0.2, 0.1, 1.0, 0.1, 0.2, 0.4, 0.6, 0.8];
+const QUALITY_TENSION_SCORE: Record<Quality, number> = {
+  maj: 0.0, min: 0.3, dim: 0.8, aug: 0.7,
+  maj7: 0.1, m7: 0.3, '7': 0.6, m7b5: 0.8, dim7: 0.9,
+  maj9: 0.2, m9: 0.4, '9': 0.5, '11': 0.5, '13': 0.5,
+  alt: 1.0, sus2: 0.2, sus4: 0.2,
+};
+
+function computeTension(chord: ChordSlot, prevChord: ChordSlot | null, keyRoot: Root): number {
+  const rootInterval = (SEMITONES[chord.root] - SEMITONES[keyRoot] + 12) % 12;
+  const intervalScore = INTERVAL_TENSION[rootInterval];
+  const motionScore = prevChord
+    ? Math.min(1, Math.abs(SEMITONES[chord.root] - SEMITONES[prevChord.root]) / 6)
+    : 0;
+  const qualityScore = QUALITY_TENSION_SCORE[chord.quality] ?? 0.5;
+  return intervalScore * 0.4 + motionScore * 0.3 + qualityScore * 0.3;
+}
+
+// Keep for D3 chart compatibility
+function computeContextualTension(chord: ChordSlot, keyRoot: Root): number {
+  return computeTension(chord, null, keyRoot) * 10;
+}
+
 const QUALITY_LABEL: Record<Quality, string> = {
   maj: '', min: 'm', dim: '°', aug: '+',
   maj7: 'Δ7', m7: 'm7', '7': '7', m7b5: 'ø7', dim7: '°7',
@@ -197,7 +220,7 @@ const WHITE_KEYS = [0, 2, 4, 5, 7, 9, 11]; // C D E F G A B
 const BLACK_KEYS = [1, 3, 6, 8, 10];        // C# D# F# G# A#
 const BLACK_KEY_POS: Record<number, number> = { 1: 1, 3: 2, 6: 4, 8: 5, 10: 6 };
 
-function MiniKeyboard({ midiNotes }: { midiNotes: number[] }) {
+function MiniKeyboard({ midiNotes, commonTones }: { midiNotes: number[]; commonTones?: Set<number> }) {
   const activeClasses = new Set(midiNotes.map(n => n % 12));
   const W = 10, H = 32, BH = 20, BW = 7;
 
@@ -207,7 +230,7 @@ function MiniKeyboard({ midiNotes }: { midiNotes: number[] }) {
         <rect
           key={pc}
           x={i * W} y={0} width={W - 1} height={H}
-          fill={activeClasses.has(pc) ? '#60a5fa' : '#e5e7eb'}
+          fill={activeClasses.has(pc) ? (commonTones?.has(pc) ? '#a855f7' : '#60a5fa') : '#e5e7eb'}
           stroke="#374151" strokeWidth={0.5}
           rx={1}
         />
@@ -218,7 +241,7 @@ function MiniKeyboard({ midiNotes }: { midiNotes: number[] }) {
           <rect
             key={pc}
             x={pos * W - BW / 2} y={0} width={BW} height={BH}
-            fill={activeClasses.has(pc) ? '#2563eb' : '#1f2937'}
+            fill={activeClasses.has(pc) ? (commonTones?.has(pc) ? '#7c3aed' : '#2563eb') : '#1f2937'}
             stroke="#111827" strokeWidth={0.5}
             rx={1}
           />
@@ -230,7 +253,7 @@ function MiniKeyboard({ midiNotes }: { midiNotes: number[] }) {
 
 // ─── Tension Chart (D3) ───────────────────────────────────────────────────────
 
-function TensionChart({ chords }: { chords: ChordSlot[] }) {
+function TensionChart({ chords, keyRoot }: { chords: ChordSlot[]; keyRoot: Root }) {
   const svgRef = useRef<SVGSVGElement>(null);
   const W = 600, H = 60, PAD = { t: 8, r: 16, b: 16, l: 32 };
 
@@ -239,7 +262,7 @@ function TensionChart({ chords }: { chords: ChordSlot[] }) {
     const svg = d3.select(svgRef.current);
     svg.selectAll('*').remove();
 
-    const data = chords.map((c, i) => ({ x: i, y: TENSION_SCORE[c.quality] }));
+    const data = chords.map((c, i) => ({ x: i, y: computeContextualTension(c, keyRoot) }));
     const xScale = d3.scaleLinear()
       .domain([0, Math.max(chords.length - 1, 1)])
       .range([PAD.l, W - PAD.r]);
@@ -280,7 +303,7 @@ function TensionChart({ chords }: { chords: ChordSlot[] }) {
       .attr('fill', '#f97316')
       .attr('stroke', '#1f2937')
       .attr('stroke-width', 1);
-  }, [chords]);
+  }, [chords, keyRoot]);
 
   return (
     <svg ref={svgRef} width={W} height={H}
@@ -288,22 +311,56 @@ function TensionChart({ chords }: { chords: ChordSlot[] }) {
   );
 }
 
+// ─── Voice Leading Helpers ────────────────────────────────────────────────────
+
+function voiceLeadingDistance(a: ChordSlot, b: ChordSlot): number {
+  const va = getVoicingNotes(a.root, a.quality, a.voicing);
+  const vb = getVoicingNotes(b.root, b.quality, b.voicing);
+  const len = Math.min(va.length, vb.length);
+  let total = 0;
+  for (let i = 0; i < len; i++) total += Math.abs(va[i] - vb[i]);
+  for (let i = len; i < Math.max(va.length, vb.length); i++) total += 6;
+  return total;
+}
+
+function getVoiceLeading(a: ChordSlot, b: ChordSlot): { semitones: number; direction: 'up' | 'down' | 'same' }[] {
+  const va = [...getVoicingNotes(a.root, a.quality, a.voicing)].sort((x, y) => x - y).slice(0, 4);
+  const vb = [...getVoicingNotes(b.root, b.quality, b.voicing)].sort((x, y) => x - y).slice(0, 4);
+  return va.map((note, i) => {
+    const diff = (vb[i] ?? vb[vb.length - 1]) - note;
+    return { semitones: Math.abs(diff), direction: diff > 0 ? 'up' : diff < 0 ? 'down' : 'same' };
+  });
+}
+
+function getCommonTones(a: ChordSlot, b: ChordSlot): Set<number> {
+  const pcA = new Set(getVoicingNotes(a.root, a.quality, a.voicing).map(n => n % 12));
+  const pcB = new Set(getVoicingNotes(b.root, b.quality, b.voicing).map(n => n % 12));
+  const common = new Set<number>();
+  pcA.forEach(pc => { if (pcB.has(pc)) common.add(pc); });
+  return common;
+}
+
 // ─── Chord Card ───────────────────────────────────────────────────────────────
 
 interface ChordCardProps {
   chord: ChordSlot;
+  prevChord: ChordSlot | null;
   keyRoot: Root;
   isPlaying: boolean;
   onRemove: () => void;
   onVoicingChange: (v: VoicingType) => void;
+  onPlay: () => void;
+  commonTones?: Set<number>;
 }
 
-function ChordCard({ chord, keyRoot, isPlaying, onRemove, onVoicingChange }: ChordCardProps) {
+function ChordCard({ chord, prevChord, keyRoot, isPlaying, onRemove, onVoicingChange, onPlay, commonTones }: ChordCardProps) {
   const midiNotes = getVoicingNotes(chord.root, chord.quality, chord.voicing);
   const fn = getHarmonicFunction(chord, keyRoot);
   const roman = getRomanNumeral(chord, keyRoot);
   const color = FUNCTION_COLOR[fn];
   const label = chord.root + QUALITY_LABEL[chord.quality];
+  const tension = computeTension(chord, prevChord, keyRoot);
+  const tensionColor = `hsl(${(1 - tension) * 120}, 80%, 50%)`;
 
   return (
     <motion.div
@@ -312,21 +369,23 @@ function ChordCard({ chord, keyRoot, isPlaying, onRemove, onVoicingChange }: Cho
       animate={{ opacity: 1, scale: isPlaying ? 1.04 : 1 }}
       exit={{ opacity: 0, scale: 0.8 }}
       transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+      onClick={(e) => { e.stopPropagation(); onPlay(); }}
       style={{
         background: '#1e2433',
         border: `2px solid ${isPlaying ? color : '#374151'}`,
         borderRadius: 10,
         padding: '10px 8px',
         minWidth: 90,
-        cursor: 'grab',
+        cursor: 'pointer',
         userSelect: 'none',
         position: 'relative',
         boxShadow: isPlaying ? `0 0 12px ${color}66` : 'none',
+        transition: 'box-shadow 0.2s',
       }}
     >
       {/* Remove button */}
       <button
-        onClick={onRemove}
+        onClick={(e) => { e.stopPropagation(); onRemove(); }}
         style={{
           position: 'absolute', top: 4, right: 4,
           background: 'none', border: 'none', color: '#6b7280',
@@ -346,7 +405,7 @@ function ChordCard({ chord, keyRoot, isPlaying, onRemove, onVoicingChange }: Cho
 
       {/* Mini keyboard */}
       <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 6 }}>
-        <MiniKeyboard midiNotes={midiNotes} />
+        <MiniKeyboard midiNotes={midiNotes} commonTones={commonTones} />
       </div>
 
       {/* Voicing selector */}
@@ -366,11 +425,9 @@ function ChordCard({ chord, keyRoot, isPlaying, onRemove, onVoicingChange }: Cho
         <option value="rootless">Rootless</option>
       </select>
 
-      {/* Tension badge */}
-      <div style={{
-        marginTop: 4, textAlign: 'center', fontSize: 9, color: '#6b7280',
-      }}>
-        tension: {TENSION_SCORE[chord.quality]}
+      {/* Tension bar */}
+      <div style={{ marginTop: 5, height: 4, borderRadius: 2, background: '#1f2937', overflow: 'hidden' }}>
+        <div style={{ height: '100%', borderRadius: 2, background: tensionColor, width: `${tension * 100}%`, transition: 'width 0.3s, background 0.3s' }} />
       </div>
     </motion.div>
   );
@@ -492,6 +549,12 @@ export default function ChordBuilder() {
     setIsPlaying(false);
   }, [chords, isPlaying]);
 
+  const playChord = useCallback(async (chord: ChordSlot) => {
+    await Tone.start();
+    const notes = getVoicingNotes(chord.root, chord.quality, chord.voicing).map(midiToNote);
+    synthRef.current?.triggerAttackRelease(notes, 0.8);
+  }, []);
+
   const exportText = useCallback(() => {
     const lines = chords.map((c, i) => {
       const roman = getRomanNumeral(c, keyRoot);
@@ -589,7 +652,7 @@ export default function ChordBuilder() {
               HARMONIC TENSION
             </div>
             {chords.length > 0
-              ? <TensionChart chords={chords} />
+              ? <TensionChart chords={chords} keyRoot={keyRoot} />
               : <div style={{ height: 60, display: 'flex', alignItems: 'center', color: '#374151', fontSize: 12 }}>
                   Add chords to see tension arc
                 </div>
@@ -613,17 +676,39 @@ export default function ChordBuilder() {
                 style={{ display: 'flex', gap: 12, listStyle: 'none', padding: 0, margin: 0, height: '100%', alignItems: 'flex-start' }}
               >
                 <AnimatePresence>
-                  {chords.map((chord, i) => (
-                    <Reorder.Item key={chord.id} value={chord} style={{ listStyle: 'none' }}>
-                      <ChordCard
-                        chord={chord}
-                        keyRoot={keyRoot}
-                        isPlaying={playingIdx === i}
-                        onRemove={() => removeChord(chord.id)}
-                        onVoicingChange={v => updateVoicing(chord.id, v)}
-                      />
-                    </Reorder.Item>
-                  ))}
+                  {chords.map((chord, i) => {
+                    const prev = i > 0 ? chords[i - 1] : null;
+                    const moves = prev ? getVoiceLeading(prev, chord) : null;
+                    return (
+                      <React.Fragment key={chord.id}>
+                        {moves && (
+                          <svg width={24} height={60} style={{ alignSelf: 'center', flexShrink: 0 }}>
+                            {moves.map((m, vi) => {
+                              const y = 6 + vi * 13;
+                              const arrowColor = m.semitones <= 2 ? '#4ade80' : m.semitones <= 4 ? '#fbbf24' : '#f87171';
+                              const arrow = m.direction === 'up' ? '↑' : m.direction === 'down' ? '↓' : '—';
+                              return (
+                                <text key={vi} x={12} y={y + 9} textAnchor="middle"
+                                  fontSize={10} fill={arrowColor} fontFamily="monospace">{arrow}</text>
+                              );
+                            })}
+                          </svg>
+                        )}
+                        <Reorder.Item value={chord} style={{ listStyle: 'none' }}>
+                          <ChordCard
+                            chord={chord}
+                            prevChord={prev}
+                            keyRoot={keyRoot}
+                            isPlaying={playingIdx === i}
+                            onRemove={() => removeChord(chord.id)}
+                            onVoicingChange={v => updateVoicing(chord.id, v)}
+                            onPlay={() => playChord(chord)}
+                            commonTones={prev ? getCommonTones(prev, chord) : undefined}
+                          />
+                        </Reorder.Item>
+                      </React.Fragment>
+                    );
+                  })}
                 </AnimatePresence>
               </Reorder.Group>
             )}

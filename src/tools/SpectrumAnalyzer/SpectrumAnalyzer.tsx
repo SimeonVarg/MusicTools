@@ -1,5 +1,6 @@
 import { useRef, useState, useEffect, useCallback } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
+import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 
 // ── Constants ────────────────────────────────────────────────────────────────
@@ -87,6 +88,16 @@ function binToFreq(bin: number, fftSize: number, sampleRate: number): number {
   return (bin * sampleRate) / fftSize;
 }
 
+function getBandEnergy(data: Uint8Array, sampleRate: number, lo: number, hi: number): number {
+  const nyquist = sampleRate / 2;
+  const loIdx = Math.floor((lo / nyquist) * data.length);
+  const hiIdx = Math.ceil((hi / nyquist) * data.length);
+  let sum = 0, count = 0;
+  for (let i = loIdx; i <= hiIdx && i < data.length; i++) { sum += data[i]; count++; }
+  const avg = count > 0 ? sum / count : 0;
+  return 20 * Math.log10(avg / 255 + 1e-6);
+}
+
 // ── Peak state ───────────────────────────────────────────────────────────────
 
 interface PeakState {
@@ -167,6 +178,11 @@ export default function SpectrumAnalyzer() {
   const [logScale, setLogScale] = useState(true);
   const [running, setRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [smoothing, setSmoothing] = useState(0.8);
+  const [frozen, setFrozen] = useState(false);
+  const frozenRef = useRef(false);
+  const bandEnergiesRef = useRef<number[]>(BANDS.map(() => MIN_DB));
+  const [bandEnergies, setBandEnergies] = useState<number[]>(BANDS.map(() => MIN_DB));
 
   // ── Audio init ─────────────────────────────────────────────────────────────
 
@@ -177,7 +193,7 @@ export default function SpectrumAnalyzer() {
       const source = ctx.createMediaStreamSource(stream);
       const analyser = ctx.createAnalyser();
       analyser.fftSize = FFT_SIZE;
-      analyser.smoothingTimeConstant = 0.8;
+      analyser.smoothingTimeConstant = smoothing;
       source.connect(analyser);
 
       audioCtxRef.current = ctx;
@@ -192,7 +208,7 @@ export default function SpectrumAnalyzer() {
     } catch (e) {
       setError('Microphone access denied or unavailable.');
     }
-  }, []);
+  }, [smoothing]);
 
   const stopAudio = useCallback(() => {
     cancelAnimationFrame(animFrameRef.current);
@@ -201,6 +217,10 @@ export default function SpectrumAnalyzer() {
     analyserRef.current = null;
     setRunning(false);
   }, []);
+
+  useEffect(() => {
+    if (analyserRef.current) analyserRef.current.smoothingTimeConstant = smoothing;
+  }, [smoothing]);
 
   // ── Draw bar mode ──────────────────────────────────────────────────────────
 
@@ -373,28 +393,35 @@ export default function SpectrumAnalyzer() {
   useEffect(() => {
     if (!running) return;
 
+    let frameCount = 0;
     const loop = () => {
       const analyser = analyserRef.current;
       const data = dataArrayRef.current;
-      if (!analyser || !data) return;
+      if (!analyser || !data) { animFrameRef.current = requestAnimationFrame(loop); return; }
 
-      analyser.getByteFrequencyData(data);
-      const sampleRate = analyser.context.sampleRate;
+      if (!frozenRef.current) {
+        analyser.getByteFrequencyData(data);
+        const sampleRate = analyser.context.sampleRate;
 
-      if (mode === 'bar') {
-        const canvas = canvasRef.current;
-        if (canvas) {
-          const ctx = canvas.getContext('2d');
-          if (ctx) drawBar(ctx, data, canvas.width, canvas.height, sampleRate);
-        }
-      } else if (mode === 'waterfall') {
-        const canvas = waterfallCanvasRef.current;
-        if (canvas) {
-          const ctx = canvas.getContext('2d');
-          if (ctx) drawWaterfall(ctx, data, canvas.width, canvas.height, sampleRate);
+        // Compute band energies
+        const energies = BANDS.map(band => getBandEnergy(data, sampleRate, band.min, band.max));
+        bandEnergiesRef.current = energies;
+        if (++frameCount % 6 === 0) setBandEnergies([...energies]);
+
+        if (mode === 'bar') {
+          const canvas = canvasRef.current;
+          if (canvas) {
+            const ctx = canvas.getContext('2d');
+            if (ctx) drawBar(ctx, data, canvas.width, canvas.height, sampleRate);
+          }
+        } else if (mode === 'waterfall') {
+          const canvas = waterfallCanvasRef.current;
+          if (canvas) {
+            const ctx = canvas.getContext('2d');
+            if (ctx) drawWaterfall(ctx, data, canvas.width, canvas.height, sampleRate);
+          }
         }
       }
-      // 3D mode is handled by useFrame in SpectrogramMesh
 
       animFrameRef.current = requestAnimationFrame(loop);
     };
@@ -456,6 +483,36 @@ export default function SpectrumAnalyzer() {
           {logScale ? 'LOG' : 'LIN'}
         </button>
 
+        {/* Smoothing slider */}
+        <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#888' }}>
+          {`Smoothing: ${smoothing.toFixed(2)}`}
+          <input
+            type="range"
+            min={0}
+            max={0.99}
+            step={0.01}
+            value={smoothing}
+            onChange={e => setSmoothing(parseFloat(e.target.value))}
+            style={{ width: 60, accentColor: '#00ffff' }}
+          />
+        </label>
+
+        {/* Freeze button */}
+        <button
+          onClick={() => { frozenRef.current = !frozenRef.current; setFrozen(frozenRef.current); }}
+          style={{
+            background: frozen ? '#0044ff22' : 'transparent',
+            border: `1px solid ${frozen ? '#4488ff' : '#444'}`,
+            color: frozen ? '#4488ff' : '#888',
+            borderRadius: 4,
+            padding: '2px 10px',
+            cursor: 'pointer',
+            fontSize: 12,
+          }}
+        >
+          {frozen ? '▶ Resume' : '❄ Freeze'}
+        </button>
+
         {/* Start/Stop */}
         <button
           onClick={running ? stopAudio : startAudio}
@@ -490,6 +547,7 @@ export default function SpectrumAnalyzer() {
             width: '100%',
             height: '100%',
             borderRadius: 4,
+            border: frozen ? '2px solid #4488ff' : 'none',
           }}
         />
 
@@ -504,12 +562,13 @@ export default function SpectrumAnalyzer() {
             height: '100%',
             borderRadius: 4,
             background: '#000',
+            border: frozen ? '2px solid #4488ff' : 'none',
           }}
         />
 
         {/* 3D mode */}
         {mode === '3d' && (
-          <div style={{ width: '100%', height: '100%' }}>
+          <div style={{ width: '100%', height: '100%', border: frozen ? '2px solid #4488ff' : 'none', borderRadius: 4 }}>
             <Canvas
               camera={{ position: [0, 3, 5], fov: 50 }}
               style={{ background: '#0a0a0f', borderRadius: 4 }}
@@ -518,6 +577,7 @@ export default function SpectrumAnalyzer() {
               <pointLight position={[0, 4, 4]} intensity={1.5} color="#00ffff" />
               <pointLight position={[0, -2, 2]} intensity={0.5} color="#8800ff" />
               <SpectrogramMesh analyser={analyserRef.current} />
+              <OrbitControls enableDamping dampingFactor={0.1} />
             </Canvas>
           </div>
         )}
@@ -535,6 +595,25 @@ export default function SpectrumAnalyzer() {
             Press START to begin analysis
           </div>
         )}
+      </div>
+
+      {/* 3D hint */}
+      {mode === '3d' && (
+        <div style={{ textAlign: 'center', fontSize: 10, color: '#555', marginTop: 4 }}>
+          Drag to rotate · Scroll to zoom
+        </div>
+      )}
+
+      {/* Band energy readout */}
+      <div style={{ display: 'flex', justifyContent: 'space-around', marginTop: 6, gap: 4 }}>
+        {BANDS.map((band, i) => (
+          <div key={band.label} style={{ textAlign: 'center', fontSize: 9, color: '#888', lineHeight: 1.3 }}>
+            <div style={{ color: '#666' }}>{band.label}</div>
+            <div style={{ color: bandEnergies[i] > -40 ? '#00ffcc' : '#555', fontWeight: 'bold' }}>
+              {bandEnergies[i].toFixed(1)} dB
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );

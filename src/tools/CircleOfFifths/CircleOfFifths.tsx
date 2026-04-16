@@ -66,6 +66,95 @@ const KEY_NOTES: Record<Key, string[]> = {
   Eb:['Eb4','G4','Bb4'], Bb:['Bb3','D4','F4'], F:['F3','A3','C4'],
 }
 
+// Minor triads for inner ring clicks
+const MINOR_KEY_NOTES: Record<Key, string[]> = {
+  C:['C4','Eb4','G4'], G:['G3','Bb3','D4'], D:['D4','F4','A4'],
+  A:['A3','C4','E4'], E:['E4','G4','B4'], B:['B3','D4','F#4'],
+  'F#':['F#3','A3','C#4'], Db:['Db4','E4','Ab4'], Ab:['Ab3','B3','Eb4'],
+  Eb:['Eb4','Gb4','Bb4'], Bb:['Bb3','Db4','F4'], F:['F3','Ab3','C4'],
+}
+
+// Diatonic chord notes for playback (7th chords)
+const DIATONIC_NOTES: Record<Key, string[][]> = {
+  C:  [['C4','E4','G4','B4'],['D4','F4','A4','C5'],['E4','G4','B4','D5'],['F4','A4','C5','E5'],['G4','B4','D5','F5'],['A4','C5','E5','G5'],['B4','D5','F5','A5']],
+  G:  [['G3','B3','D4','F#4'],['A3','C4','E4','G4'],['B3','D4','F#4','A4'],['C4','E4','G4','B4'],['D4','F#4','A4','C5'],['E4','G4','B4','D5'],['F#4','A4','C5','E5']],
+  D:  [['D4','F#4','A4','C#5'],['E4','G4','B4','D5'],['F#4','A4','C#5','E5'],['G4','B4','D5','F#5'],['A4','C#5','E5','G5'],['B4','D5','F#5','A5'],['C#5','E5','G5','B5']],
+  A:  [['A3','C#4','E4','G#4'],['B3','D4','F#4','A4'],['C#4','E4','G#4','B4'],['D4','F#4','A4','C#5'],['E4','G#4','B4','D5'],['F#4','A4','C#5','E5'],['G#4','B4','D5','F#5']],
+  E:  [['E4','G#4','B4','D#5'],['F#4','A4','C#5','E5'],['G#4','B4','D#5','F#5'],['A4','C#5','E5','G#5'],['B4','D#5','F#5','A5'],['C#5','E5','G#5','B5'],['D#5','F#5','A5','C#6']],
+  B:  [['B3','D#4','F#4','A#4'],['C#4','E4','G#4','B4'],['D#4','F#4','A#4','C#5'],['E4','G#4','B4','D#5'],['F#4','A#4','C#5','E5'],['G#4','B4','D#5','F#5'],['A#4','C#5','E5','G#5']],
+  'F#':[['F#3','A#3','C#4','E#4'],['G#3','B3','D#4','F#4'],['A#3','C#4','E#4','G#4'],['B3','D#4','F#4','A#4'],['C#4','E#4','G#4','B4'],['D#4','F#4','A#4','C#5'],['E#4','G#4','B4','D#5']],
+  Db: [['Db4','F4','Ab4','C5'],['Eb4','Gb4','Bb4','Db5'],['F4','Ab4','C5','Eb5'],['Gb4','Bb4','Db5','F5'],['Ab4','C5','Eb5','Gb5'],['Bb4','Db5','F5','Ab5'],['C5','Eb5','Gb5','Bb5']],
+  Ab: [['Ab3','C4','Eb4','G4'],['Bb3','Db4','F4','Ab4'],['C4','Eb4','G4','Bb4'],['Db4','F4','Ab4','C5'],['Eb4','G4','Bb4','Db5'],['F4','Ab4','C5','Eb5'],['G4','Bb4','Db5','F5']],
+  Eb: [['Eb4','G4','Bb4','D5'],['F4','Ab4','C5','Eb5'],['G4','Bb4','D5','F5'],['Ab4','C5','Eb5','G5'],['Bb4','D5','F5','Ab5'],['C5','Eb5','G5','Bb5'],['D5','F5','Ab5','C6']],
+  Bb: [['Bb3','D4','F4','A4'],['C4','Eb4','G4','Bb4'],['D4','F4','A4','C5'],['Eb4','G4','Bb4','D5'],['F4','A4','C5','Eb5'],['G4','Bb4','D5','F5'],['A4','C5','Eb5','G5']],
+  F:  [['F3','A3','C4','E4'],['G3','Bb3','D4','F4'],['A3','C4','E4','G4'],['Bb3','D4','F4','A4'],['C4','E4','G4','Bb4'],['D4','F4','A4','C5'],['E4','G4','Bb4','D5']],
+}
+
+// Modes
+const MODES = ['ionian','dorian','phrygian','lydian','mixolydian','aeolian','locrian'] as const
+type Mode = typeof MODES[number]
+
+const MODE_LABELS: Record<Mode, string> = {
+  ionian:'Ionian', dorian:'Dorian', phrygian:'Phrygian', lydian:'Lydian',
+  mixolydian:'Mixolydian', aeolian:'Aeolian', locrian:'Locrian',
+}
+
+const MODE_DEGREES: Record<Mode, string> = {
+  ionian:'1 2 3 4 5 6 7', dorian:'1 2 ♭3 4 5 6 ♭7', phrygian:'1 ♭2 ♭3 4 5 ♭6 ♭7',
+  lydian:'1 2 3 ♯4 5 6 7', mixolydian:'1 2 3 4 5 6 ♭7', aeolian:'1 2 ♭3 4 5 ♭6 ♭7',
+  locrian:'1 ♭2 ♭3 4 ♭5 ♭6 ♭7',
+}
+
+const MODE_CHAR: Record<Mode, string> = {
+  ionian:'Natural major scale', dorian:'♮6 (raised 6th vs natural minor)', phrygian:'♭2 (Phrygian flat 2nd)',
+  lydian:'♯4 (raised 4th)', mixolydian:'♭7 (dominant 7th)', aeolian:'Natural minor scale',
+  locrian:'♭5 (diminished 5th)',
+}
+
+const MODE_INTERVALS: Record<Mode, number[]> = {
+  ionian:     [0,2,4,5,7,9,11],
+  dorian:     [0,2,3,5,7,9,10],
+  phrygian:   [0,1,3,5,7,8,10],
+  lydian:     [0,2,4,6,7,9,11],
+  mixolydian: [0,2,4,5,7,9,10],
+  aeolian:    [0,2,3,5,7,8,10],
+  locrian:    [0,1,3,5,6,8,10],
+}
+
+// Chromatic note names for building chord symbols
+const NOTE_NAMES = ['C','Db','D','Eb','E','F','F#','G','Ab','A','Bb','B']
+// Octave-4 note strings for each chromatic pitch
+const NOTE_STRINGS = ['C4','Db4','D4','Eb4','E4','F4','F#4','G4','Ab4','A4','Bb4','B4']
+
+interface ChordInfo {
+  degree: string
+  symbol: string
+  quality: 'maj' | 'min' | 'dim'
+  notes: string[] // root+third+fifth in octave 4
+}
+
+function getDiatonicChords(rootIdx: number, mode: Mode): ChordInfo[] {
+  const ivls = MODE_INTERVALS[mode]
+  const degrees = ['I','II','III','IV','V','VI','VII']
+  return ivls.map((interval, d) => {
+    const r = (rootIdx + interval) % 12
+    const t = (rootIdx + ivls[(d + 2) % 7]) % 12
+    const f = (rootIdx + ivls[(d + 4) % 7]) % 12
+    const third = (t - r + 12) % 12
+    const fifth  = (f - r + 12) % 12
+    const quality: 'maj' | 'min' | 'dim' =
+      fifth === 6 ? 'dim' : third === 3 ? 'min' : 'maj'
+    const suffix = quality === 'maj' ? '' : quality === 'min' ? 'm' : '°'
+    const deg = quality === 'maj' ? degrees[d] : quality === 'dim' ? degrees[d].toLowerCase() + '°' : degrees[d].toLowerCase()
+    return {
+      degree: deg,
+      symbol: NOTE_NAMES[r] + suffix,
+      quality,
+      notes: [NOTE_STRINGS[r], NOTE_STRINGS[t], NOTE_STRINGS[f]],
+    }
+  })
+}
+
 // Color: sharps = warm, flats = cool, C = neutral
 const KEY_COLORS: Record<Key, string> = {
   C:'#a0a0ff',
@@ -113,6 +202,7 @@ interface SliceProps {
   keyName: Key
   isSelected: boolean
   isHighlighted: boolean
+  opacity?: number
   rOut: number
   rIn: number
   label: string
@@ -123,7 +213,7 @@ interface SliceProps {
   onMouseLeave: () => void
 }
 
-function WheelSlice({ index, keyName, isSelected, isHighlighted, rOut, rIn, label, labelR, fontSize, onClick, onMouseEnter, onMouseLeave }: SliceProps) {
+function WheelSlice({ index, keyName, isSelected, isHighlighted, opacity = 1, rOut, rIn, label, labelR, fontSize, onClick, onMouseEnter, onMouseLeave }: SliceProps) {
   const start = angleFor(index) - SLICE / 2
   const end = angleFor(index) + SLICE / 2
   const mid = angleFor(index)
@@ -134,7 +224,7 @@ function WheelSlice({ index, keyName, isSelected, isHighlighted, rOut, rIn, labe
   const glowId = `glow-${keyName.replace('#', 's')}`
 
   return (
-    <g onClick={onClick} onMouseEnter={e => onMouseEnter(e, keyName)} onMouseLeave={onMouseLeave} style={{ cursor: 'pointer' }}>
+    <g onClick={onClick} onMouseEnter={e => onMouseEnter(e, keyName)} onMouseLeave={onMouseLeave} style={{ cursor: 'pointer', opacity }}>
       <path
         d={arcPath(CX, CY, rOut, rIn, start, end)}
         fill={fill}
@@ -194,7 +284,9 @@ function ChordSlice({ index, chord, degree, active }: ChordSliceProps) {
 
 export default function CircleOfFifths() {
   const [selected, setSelected] = useState<Key | null>(null)
+  const [mode, setMode] = useState<Mode>('ionian')
   const [tooltip, setTooltip] = useState<{ x: number; y: number; text: string } | null>(null)
+  const [glowIdx, setGlowIdx] = useState<number | null>(null)
   const synthRef = useRef<Tone.PolySynth | null>(null)
 
   const getSynth = useCallback(() => {
@@ -215,6 +307,22 @@ export default function CircleOfFifths() {
     synth.triggerAttackRelease(notes, '2n')
   }, [getSynth])
 
+  const handleMinorKeyClick = useCallback(async (key: Key) => {
+    await Tone.start()
+    setSelected(prev => prev === key ? null : key)
+    const synth = getSynth()
+    const notes = MINOR_KEY_NOTES[key]
+    synth.triggerAttackRelease(notes, '2n')
+  }, [getSynth])
+
+  const handleDiatonicCardClick = useCallback(async (chord: ChordInfo, idx: number) => {
+    await Tone.start()
+    const synth = getSynth()
+    synth.triggerAttackRelease(chord.notes, '2n')
+    setGlowIdx(idx)
+    setTimeout(() => setGlowIdx(null), 200)
+  }, [getSynth])
+
   // Compute highlighted keys for selected
   const highlighted = new Set<string>()
   if (selected) {
@@ -232,6 +340,16 @@ export default function CircleOfFifths() {
   const secDoms = selected ? SEC_DOMINANTS[selected] : null
   const tritoneSub = selected ? TRITONE_SUBS[selected] : null
   const relMinor = selected ? RELATIVE_MINORS[selected] : null
+
+  // T1/T2: diatonic chord cards from mode intervals
+  const rootIdx = selected ? KEYS.indexOf(selected) : 0
+  const diatonicChords: ChordInfo[] = selected ? getDiatonicChords(rootIdx, mode) : []
+
+  // T2: which wheel key indices are in the current mode (relative to selected)
+  const inModeKeys = new Set<number>()
+  if (selected) {
+    MODE_INTERVALS[mode].forEach(iv => inModeKeys.add((rootIdx + iv) % 12))
+  }
 
   // SVG defs: glow filters per key
   const glowFilters = KEYS.map(k => {
@@ -259,6 +377,21 @@ export default function CircleOfFifths() {
       </h1>
       <p style={{ fontSize: 12, color: '#555', marginBottom: 24 }}>Click a key to explore</p>
 
+      {/* Mode selector */}
+      <div style={{ display: 'flex', gap: 6, marginBottom: 20, flexWrap: 'wrap', justifyContent: 'center' }}>
+        {MODES.map(m => (
+          <button key={m} onClick={() => setMode(m)} style={{
+            background: mode === m ? '#7af' : '#1a1a2e',
+            color: mode === m ? '#000' : '#666',
+            border: mode === m ? '1px solid #7af' : '1px solid #333',
+            borderRadius: 4, padding: '4px 10px', fontSize: 11,
+            cursor: 'pointer', fontFamily: 'monospace',
+          }}>
+            {MODE_LABELS[m]}
+          </button>
+        ))}
+      </div>
+
       <div style={{ display: 'flex', gap: 32, flexWrap: 'wrap', justifyContent: 'center', alignItems: 'flex-start' }}>
 
         {/* SVG Wheel */}
@@ -266,17 +399,13 @@ export default function CircleOfFifths() {
           <svg width={600} height={600} viewBox="0 0 600 600">
             <defs>{glowFilters}</defs>
 
-            {/* Chord ring (outermost) — only when key selected */}
-            {diatonic && KEYS.map((k, i) => (
-              <ChordSlice key={k} index={i} chord={diatonic[i] ?? ''} degree={SCALE_DEGREES[i] ?? ''} active={!!selected} />
-            ))}
-
             {/* Major keys outer ring */}
             {KEYS.map((k, i) => (
               <WheelSlice
                 key={k} index={i} keyName={k}
                 isSelected={selected === k}
                 isHighlighted={highlighted.has(k)}
+                opacity={selected && !inModeKeys.has(i) ? 0.3 : 1}
                 rOut={R_OUTER_OUT} rIn={R_OUTER_IN}
                 label={k} labelR={(R_OUTER_OUT + R_OUTER_IN) / 2}
                 fontSize={16}
@@ -297,7 +426,7 @@ export default function CircleOfFifths() {
                   rOut={R_INNER_OUT} rIn={R_INNER_IN}
                   label={minorLabel} labelR={(R_INNER_OUT + R_INNER_IN) / 2}
                   fontSize={11}
-                  onClick={() => handleKeyClick(k)}
+                  onClick={() => handleMinorKeyClick(k)}
                   onMouseEnter={(e) => setTooltip({ x: e.clientX, y: e.clientY, text: `${minorLabel} — relative of ${k} major` })}
                   onMouseLeave={() => setTooltip(null)}
                 />
@@ -338,6 +467,12 @@ export default function CircleOfFifths() {
                   <text x={CX} y={CY + 74} textAnchor="middle" fontSize={8} fill="#444" fontFamily="monospace">
                     tritone sub: {tritoneSub}
                   </text>
+                  <text x={CX} y={CY + 88} textAnchor="middle" fontSize={8} fill="#7af" fontFamily="monospace">
+                    {MODE_LABELS[mode]}: {MODE_DEGREES[mode]}
+                  </text>
+                  <text x={CX} y={CY + 100} textAnchor="middle" fontSize={7} fill="#555" fontFamily="monospace">
+                    {MODE_CHAR[mode]}
+                  </text>
                 </motion.g>
               ) : (
                 <motion.g key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
@@ -357,6 +492,25 @@ export default function CircleOfFifths() {
               zIndex: 100, whiteSpace: 'nowrap',
             }}>
               {tooltip.text}
+            </div>
+          )}
+
+          {/* T1/T3: 7 diatonic chord cards */}
+          {selected && (
+            <div style={{ display: 'flex', gap: 6, marginTop: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+              {diatonicChords.map((chord, i) => (
+                <div key={i} onClick={() => handleDiatonicCardClick(chord, i)} style={{
+                  background: glowIdx === i ? '#ffffff22' : '#0d0d1a',
+                  border: `1px solid ${chord.quality === 'maj' ? '#7af' : chord.quality === 'min' ? '#a8f' : '#f87'}`,
+                  borderRadius: 6, padding: '6px 10px', cursor: 'pointer', textAlign: 'center',
+                  boxShadow: glowIdx === i ? '0 0 12px #fff8' : 'none',
+                  transition: 'box-shadow 0.2s, background 0.2s', minWidth: 52,
+                }}>
+                  <div style={{ fontSize: 10, color: '#666' }}>{chord.degree}</div>
+                  <div style={{ fontSize: 13, color: '#ccc', fontWeight: 'bold' }}>{chord.symbol}</div>
+                  <div style={{ fontSize: 9, color: chord.quality === 'maj' ? '#7af' : chord.quality === 'min' ? '#a8f' : '#f87' }}>{chord.quality}</div>
+                </div>
+              ))}
             </div>
           )}
         </div>
@@ -380,9 +534,11 @@ export default function CircleOfFifths() {
                 <div style={{ marginBottom: 20 }}>
                   <div style={{ fontSize: 10, color: '#666', marginBottom: 8, letterSpacing: 1 }}>DIATONIC CHORDS</div>
                   {diatonic?.map((chord, i) => (
-                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', borderBottom: '1px solid #1a1a2a' }}>
+                    <div key={i} onClick={() => { if (diatonicChords[i]) handleDiatonicCardClick(diatonicChords[i], i) }} style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', borderBottom: '1px solid #1a1a2a', cursor: 'pointer' }}
+                      onMouseEnter={e => (e.currentTarget.style.background = '#1a1a3a')}
+                      onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
                       <span style={{ color: '#555', fontSize: 11 }}>{SCALE_DEGREES[i]}</span>
-                      <span style={{ color: '#9af', fontSize: 11 }}>{chord}</span>
+                      <span style={{ color: '#9af', fontSize: 11 }}>{chord} ▶</span>
                     </div>
                   ))}
                 </div>

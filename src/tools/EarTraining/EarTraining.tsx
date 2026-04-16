@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import * as Tone from 'tone';
 import * as d3 from 'd3';
 import { motion, AnimatePresence } from 'framer-motion';
-import confetti from 'canvas-confetti';
+
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -32,6 +32,8 @@ interface ProgressionDef {
 interface Stats {
   [key: string]: { correct: number; total: number };
 }
+
+type StatsMap = Record<string, { correct: number; total: number }>;
 
 interface GameState {
   mode: GameMode;
@@ -149,6 +151,32 @@ function pick<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
+function weightedPick<T extends { name: string }>(arr: T[], stats: Stats): T {
+  const weights = arr.map(item => {
+    const s = stats[item.name];
+    const acc = s && s.total > 0 ? s.correct / s.total : 0.5;
+    return 1 / (acc + 0.1);
+  });
+  const total = weights.reduce((a, b) => a + b, 0);
+  let r = Math.random() * total;
+  for (let i = 0; i < arr.length; i++) {
+    r -= weights[i];
+    if (r <= 0) return arr[i];
+  }
+  return arr[arr.length - 1];
+}
+
+function buildWeightedPool<T extends { name: string }>(items: T[], stats: StatsMap): T[] {
+  return items.flatMap(item => {
+    const s = stats[item.name];
+    if (!s || s.total < 3) return [item, item];
+    const acc = s.correct / s.total;
+    if (acc < 0.6) return [item, item, item];
+    if (acc > 0.85) return [item];
+    return [item, item];
+  });
+}
+
 
 // ─── Audio ────────────────────────────────────────────────────────────────────
 
@@ -212,11 +240,11 @@ interface Question {
   explanation: string;
 }
 
-function generateIntervalQuestion(difficulty: Difficulty, playbackType: PlaybackType): Question {
+function generateIntervalQuestion(difficulty: Difficulty, playbackType: PlaybackType, stats: StatsMap): Question {
   const pool = difficulty === 'beginner'
     ? INTERVALS.filter(i => BEGINNER_INTERVALS.includes(i.name))
     : INTERVALS;
-  const correct = pick(pool);
+  const correct = pick(buildWeightedPool(pool, stats));
   const distractors = shuffle(pool.filter(i => i.name !== correct.name)).slice(0, 3);
   const options = shuffle([correct, ...distractors]).map(i => i.name);
   const rootIdx = Math.floor(Math.random() * 4);
@@ -229,13 +257,13 @@ function generateIntervalQuestion(difficulty: Difficulty, playbackType: Playback
   };
 }
 
-function generateChordQuestion(difficulty: Difficulty): Question {
+function generateChordQuestion(difficulty: Difficulty, stats: StatsMap): Question {
   const pool = difficulty === 'beginner'
     ? CHORD_DEFS.filter(c => BEGINNER_CHORDS.includes(c.name))
     : difficulty === 'intermediate'
     ? CHORD_DEFS.filter(c => !ADVANCED_CHORDS.includes(c.name))
     : CHORD_DEFS;
-  const correct = pick(pool);
+  const correct = pick(buildWeightedPool(pool, stats));
   const distractors = shuffle(pool.filter(c => c.name !== correct.name)).slice(0, 3);
   const options = shuffle([correct, ...distractors]).map(c => c.name);
   const rootIdx = Math.floor(Math.random() * 4);
@@ -248,11 +276,11 @@ function generateChordQuestion(difficulty: Difficulty): Question {
   };
 }
 
-function generateInversionQuestion(difficulty: Difficulty): Question {
+function generateInversionQuestion(difficulty: Difficulty, stats: StatsMap): Question {
   const pool = difficulty === 'beginner'
     ? CHORD_DEFS.filter(c => BEGINNER_CHORDS.includes(c.name))
     : CHORD_DEFS.filter(c => !ADVANCED_CHORDS.includes(c.name));
-  const chord = pick(pool);
+  const chord = pick(buildWeightedPool(pool, stats));
   const maxInv = chord.intervals.length - 1;
   const invNum = Math.floor(Math.random() * (maxInv + 1));
   const invNames = ['Root Position', '1st Inversion', '2nd Inversion', '3rd Inversion'];
@@ -272,8 +300,8 @@ function generateInversionQuestion(difficulty: Difficulty): Question {
   };
 }
 
-function generateProgressionQuestion(): Question {
-  const correct = pick(PROGRESSIONS);
+function generateProgressionQuestion(stats: StatsMap): Question {
+  const correct = pick(buildWeightedPool(PROGRESSIONS, stats));
   const distractors = shuffle(PROGRESSIONS.filter(p => p.name !== correct.name)).slice(0, 3);
   const options = shuffle([correct, ...distractors]).map(p => p.name);
   const rootIdx = Math.floor(Math.random() * 3);
@@ -286,12 +314,12 @@ function generateProgressionQuestion(): Question {
   };
 }
 
-function generateQuestion(mode: GameMode, difficulty: Difficulty, playbackType: PlaybackType): Question {
+function generateQuestion(mode: GameMode, difficulty: Difficulty, playbackType: PlaybackType, stats: StatsMap): Question {
   switch (mode) {
-    case 'interval':    return generateIntervalQuestion(difficulty, playbackType);
-    case 'chord':       return generateChordQuestion(difficulty);
-    case 'inversion':   return generateInversionQuestion(difficulty);
-    case 'progression': return generateProgressionQuestion();
+    case 'interval':    return generateIntervalQuestion(difficulty, playbackType, stats);
+    case 'chord':       return generateChordQuestion(difficulty, stats);
+    case 'inversion':   return generateInversionQuestion(difficulty, stats);
+    case 'progression': return generateProgressionQuestion(stats);
   }
 }
 
@@ -308,7 +336,7 @@ function getOptionLabel(mode: GameMode, key: string): string {
 
 // ─── Radar Chart ──────────────────────────────────────────────────────────────
 
-interface RadarChartProps { stats: Stats; mode: GameMode; }
+interface RadarChartProps { stats: StatsMap; mode: GameMode; }
 
 function RadarChart({ stats, mode }: RadarChartProps) {
   const svgRef = useRef<SVGSVGElement>(null);
@@ -400,31 +428,52 @@ export default function EarTraining() {
     bestStreak: 0,
     stats: {},
   });
+  const [stats, setStats] = useState<StatsMap>(() => {
+    try { return JSON.parse(localStorage.getItem('ear-training-stats') ?? '{}'); }
+    catch { return {}; }
+  });
   const [playbackType, setPlaybackType] = useState<PlaybackType>('ascending');
   const [question, setQuestion] = useState<Question | null>(null);
   const [answered, setAnswered] = useState<string | null>(null); // selected option key
   const [showLevelUp, setShowLevelUp] = useState(false);
   const [showStats, setShowStats] = useState(false);
   const [started, setStarted] = useState(false);
+  const [celebrating, setCelebrating] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
   const prevLevel = useRef(1);
 
   const newQuestion = useCallback(() => {
     setAnswered(null);
-    setQuestion(generateQuestion(gameState.mode, gameState.difficulty, playbackType));
-  }, [gameState.mode, gameState.difficulty, playbackType]);
+    setQuestion(generateQuestion(gameState.mode, gameState.difficulty, playbackType, stats));
+  }, [gameState.mode, gameState.difficulty, playbackType, stats]);
 
   useEffect(() => { if (started) newQuestion(); }, [started, gameState.mode, gameState.difficulty]);
 
   const replayAudio = useCallback(() => {
     if (!question) return;
+    setIsPlaying(true);
     const d = question.playbackData as Record<string, unknown>;
+    let duration = 2000;
     if (question.type === 'interval') {
       playInterval(d.semitones as number, d.playbackType as PlaybackType, d.rootIdx as number);
     } else if (question.type === 'chord' || question.type === 'inversion') {
       playChord(d.intervals as number[], d.rootIdx as number);
     } else {
-      playProgression(d.chords as number[][], d.rootIdx as number);
+      const chords = d.chords as number[][];
+      duration = chords.length * 1200 + 500;
+      playProgression(chords, d.rootIdx as number);
     }
+    setTimeout(() => setIsPlaying(false), duration);
+  }, [question]);
+
+  const playRoot = useCallback(async () => {
+    if (!question || question.type !== 'interval') return;
+    const d = question.playbackData as Record<string, unknown>;
+    setIsPlaying(true);
+    await ensureAudio();
+    const synth = new Tone.Synth({ oscillator: { type: 'triangle' }, envelope: { attack: 0.02, decay: 0.1, sustain: 0.5, release: 0.8 } }).toDestination();
+    synth.triggerAttackRelease(NOTE_NAMES[d.rootIdx as number], '2n');
+    setTimeout(() => { synth.dispose(); setIsPlaying(false); }, 1200);
   }, [question]);
 
   // auto-play on new question
@@ -434,14 +483,16 @@ export default function EarTraining() {
     if (answered || !question) return;
     setAnswered(chosen);
     const correct = chosen === question.correctAnswer;
+    const key = question.correctAnswer;
+
+    setStats(prev => {
+      const prevStat = prev[key] ?? { correct: 0, total: 0 };
+      const next = { ...prev, [key]: { correct: prevStat.correct + (correct ? 1 : 0), total: prevStat.total + 1 } };
+      localStorage.setItem('ear-training-stats', JSON.stringify(next));
+      return next;
+    });
 
     setGameState(prev => {
-      const key = question.correctAnswer;
-      const prevStat = prev.stats[key] ?? { correct: 0, total: 0 };
-      const newStats = {
-        ...prev.stats,
-        [key]: { correct: prevStat.correct + (correct ? 1 : 0), total: prevStat.total + 1 },
-      };
       const newStreak = correct ? prev.streak + 1 : 0;
       const newXp = prev.xp + (correct ? XP_PER_CORRECT : 0);
       const newScore = prev.score + (correct ? XP_PER_CORRECT * newStreak : 0);
@@ -453,7 +504,7 @@ export default function EarTraining() {
         level: newLevel,
         streak: newStreak,
         bestStreak: Math.max(prev.bestStreak, newStreak),
-        stats: newStats,
+        stats: prev.stats, // keep for backward compat
       };
     });
   }, [answered, question]);
@@ -467,10 +518,12 @@ export default function EarTraining() {
     }
   }, [gameState.level]);
 
-  // confetti on milestone streaks
+  // fire burst on milestone streaks
   useEffect(() => {
     if (MILESTONE_STREAKS.includes(gameState.streak)) {
-      confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 }, colors: ['#00ffc8', '#ff2d78', '#ffe600'] });
+      setCelebrating(true);
+      const t = setTimeout(() => setCelebrating(false), 600);
+      return () => clearTimeout(t);
     }
   }, [gameState.streak]);
 
@@ -522,7 +575,7 @@ export default function EarTraining() {
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <span style={{ fontSize: 22 }}>{gameState.streak >= 5 ? '🔥' : '💫'}</span>
-          <span style={{ color: NEON.pink, fontWeight: 700, fontSize: 18 }}>{gameState.streak}</span>
+          <span style={{ color: NEON.pink, fontWeight: 700, fontSize: 18, animation: celebrating ? 'streakPulse 0.6s ease-in-out' : undefined }}>{gameState.streak}</span>
           <span style={{ color: '#555', fontSize: 10 }}>STREAK</span>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
@@ -565,7 +618,12 @@ export default function EarTraining() {
       <div style={styles.gameArea}>
         {question && (
           <>
-            <button style={styles.replayBtn} onClick={replayAudio}>🔊 Replay</button>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button style={{ ...styles.replayBtn, opacity: isPlaying ? 0.5 : 1 }} disabled={isPlaying} onClick={replayAudio}>🔊 Replay</button>
+              {question.type === 'interval' && (
+                <button style={{ ...styles.replayBtn, opacity: isPlaying ? 0.5 : 1 }} disabled={isPlaying} onClick={playRoot}>🎵 Play Root</button>
+              )}
+            </div>
 
             {/* Answer buttons */}
             <div style={styles.optionsGrid}>
@@ -573,8 +631,10 @@ export default function EarTraining() {
                 const isCorrect = opt === question.correctAnswer;
                 const isChosen = opt === answered;
                 const revealed = answered !== null;
+                const s = stats[opt];
+                const isWeak = s && s.total >= 3 && s.correct / s.total < 0.6;
                 let bg = 'transparent';
-                let border = '#1e3a5f';
+                let border = isWeak && !revealed ? '#ef4444' : '#1e3a5f';
                 let color = '#cbd5e1';
                 if (revealed && isCorrect) { bg = 'rgba(0,255,100,0.15)'; border = '#00ff64'; color = '#00ff64'; }
                 else if (revealed && isChosen && !isCorrect) { bg = 'rgba(255,45,120,0.15)'; border = NEON.pink; color = NEON.pink; }
@@ -618,8 +678,31 @@ export default function EarTraining() {
           <motion.div initial={{ opacity: 0, x: 300 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 300 }}
             style={styles.statsPanel}>
             <div style={{ color: NEON.cyan, fontWeight: 700, marginBottom: 8 }}>📊 Accuracy Radar</div>
-            <RadarChart stats={gameState.stats} mode={gameState.mode} />
+            <RadarChart stats={stats} mode={gameState.mode} />
             <div style={{ color: '#7dd3fc', fontSize: 12, marginTop: 8 }}>Best Streak: 🔥 {gameState.bestStreak}</div>
+            <div style={{ marginTop: 16, width: '100%' }}>
+              <div style={{ color: NEON.pink, fontWeight: 700, fontSize: 12, marginBottom: 6 }}>⚠ Weakest</div>
+              {(() => {
+                const keys = gameState.mode === 'interval' ? INTERVALS.map(i => i.name)
+                  : gameState.mode === 'chord' || gameState.mode === 'inversion' ? CHORD_DEFS.map(c => c.name)
+                  : PROGRESSIONS.map(p => p.name);
+                return keys
+                  .map(k => {
+                    const s = stats[k];
+                    const acc = s && s.total > 0 ? s.correct / s.total : s ? 0 : -1;
+                    return { name: k, acc, total: s?.total ?? 0 };
+                  })
+                  .filter(x => x.total > 0)
+                  .sort((a, b) => a.acc - b.acc)
+                  .slice(0, 3)
+                  .map(x => (
+                    <div key={x.name} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#94a3b8', padding: '2px 0' }}>
+                      <span>{getOptionLabel(gameState.mode, x.name)}</span>
+                      <span style={{ color: x.acc < 0.5 ? NEON.pink : NEON.cyan }}>{Math.round(x.acc * 100)}%</span>
+                    </div>
+                  ));
+              })()}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -635,6 +718,9 @@ export default function EarTraining() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* streakPulse keyframe */}
+      <style>{`@keyframes streakPulse { 0% { transform: scale(1); color: ${NEON.pink}; } 50% { transform: scale(1.5); color: ${NEON.yellow}; } 100% { transform: scale(1); color: ${NEON.pink}; } }`}</style>
     </div>
   );
 }

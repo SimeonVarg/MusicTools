@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback, useReducer } from 'react';
+import { useEffect, useRef, useCallback, useReducer, useState } from 'react';
 import * as Tone from 'tone';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -32,7 +32,76 @@ type Action =
   | { type: 'TOGGLE_SOLO'; track: number }
   | { type: 'SET_CURRENT_STEP'; track: number; step: number }
   | { type: 'APPLY_EUCLIDEAN'; track: number; pulses: number }
+  | { type: 'LOAD_PRESET'; preset: PresetName }
   | { type: 'STOP' };
+
+// ─── Presets ──────────────────────────────────────────────────────────────────
+
+type PresetName = '4-on-floor' | 'Backbeat' | 'Bossa Nova' | 'Shuffle' | 'Breakbeat' | 'Empty';
+
+interface PresetDef {
+  stepCount: number;
+  swing?: number;
+  tracks: { [key: string]: StepState[] };
+}
+
+const PRESETS: Record<PresetName, PresetDef> = {
+  '4-on-floor': {
+    stepCount: 16,
+    tracks: {
+      Kick:   [1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0],
+      Snare:  [0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0],
+      'Hi-Hat':[1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1],
+      Clap:   [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0],
+    },
+  },
+  'Backbeat': {
+    stepCount: 16,
+    tracks: {
+      Kick:   [1,0,0,0, 0,0,0,0, 1,0,0,0, 0,0,0,0],
+      Snare:  [0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0],
+      'Hi-Hat':[1,0,1,0, 1,0,1,0, 1,0,1,0, 1,0,1,0],
+      Clap:   [0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0],
+    },
+  },
+  'Bossa Nova': {
+    stepCount: 16,
+    tracks: {
+      Kick:   [1,0,0,1, 0,0,1,0, 0,0,1,0, 0,0,0,0],
+      Snare:  [0,0,0,0, 0,0,0,0, 1,0,0,0, 0,0,1,0],
+      'Hi-Hat':[1,0,1,0, 1,0,1,0, 1,0,1,0, 1,0,1,0],
+      Clap:   [0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0],
+    },
+  },
+  'Shuffle': {
+    stepCount: 16,
+    swing: 60,
+    tracks: {
+      Kick:   [1,0,0,0, 0,0,1,0, 0,0,0,0, 1,0,0,0],
+      Snare:  [0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0],
+      'Hi-Hat':[1,0,1,0, 1,0,1,0, 1,0,1,0, 1,0,1,0],
+      Clap:   [0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0],
+    },
+  },
+  'Breakbeat': {
+    stepCount: 16,
+    tracks: {
+      Kick:   [1,0,0,0, 0,0,1,0, 0,1,0,0, 0,0,0,0],
+      Snare:  [0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,1],
+      'Hi-Hat':[1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1],
+      Clap:   [0,0,0,0, 1,0,0,0, 0,0,0,0, 0,0,1,0],
+    },
+  },
+  'Empty': {
+    stepCount: 16,
+    tracks: {
+      Kick:   [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0],
+      Snare:  [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0],
+      'Hi-Hat':[0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0],
+      Clap:   [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0],
+    },
+  },
+};
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -158,6 +227,17 @@ function reducer(state: State, action: Action): State {
       });
       return { ...state, tracks };
     }
+    case 'LOAD_PRESET': {
+      const p = PRESETS[action.preset];
+      const tracks = state.tracks.map(t => {
+        const pattern = p.tracks[t.name];
+        if (!pattern) return t;
+        const steps: StepState[] = Array(p.stepCount).fill(0);
+        for (let j = 0; j < Math.min(p.stepCount, pattern.length); j++) steps[j] = pattern[j];
+        return { ...t, stepCount: p.stepCount, steps };
+      });
+      return { ...state, tracks, ...(p.swing !== undefined ? { swing: p.swing } : {}) };
+    }
     default: return state;
   }
 }
@@ -180,9 +260,9 @@ function stepAngle(step: number, total: number) {
   return (step / total) * Math.PI * 2 - Math.PI / 2;
 }
 
-function dotPos(trackIdx: number, step: number, total: number) {
+function dotPos(trackIdx: number, step: number, total: number, swing = 0) {
   const r = ringRadius(trackIdx);
-  const a = stepAngle(step, total);
+  const a = stepAngle(step, total) + (step % 2 === 1 ? (swing / 100) * (Math.PI / total) : 0);
   return { x: CX + r * Math.cos(a), y: CY + r * Math.sin(a) };
 }
 
@@ -192,6 +272,19 @@ export default function DrumMachine() {
   const [state, dispatch] = useReducer(reducer, initialState);
   const stateRef = useRef(state);
   stateRef.current = state;
+
+  // Euclidean local state per track
+  const [euclidValues, setEuclidValues] = useState<number[]>(() => state.tracks.map(() => 0));
+  const euclidDebounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  const handleEuclidChange = (trackIdx: number, value: number) => {
+    const v = Math.max(0, Math.min(state.tracks[trackIdx].stepCount, value || 0));
+    setEuclidValues(prev => { const n = [...prev]; n[trackIdx] = v; return n; });
+    clearTimeout(euclidDebounceRef.current);
+    euclidDebounceRef.current = setTimeout(() => {
+      if (v > 0) dispatch({ type: 'APPLY_EUCLIDEAN', track: trackIdx, pulses: v });
+    }, 300);
+  };
 
   // Tone.js synths
   const synthsRef = useRef<{
@@ -430,10 +523,29 @@ export default function DrumMachine() {
           />
         ))}
 
+        {/* Ring labels */}
+        {state.tracks.map((track, ti) => {
+          const r = ringRadius(ti);
+          return (
+            <text
+              key={`label-${ti}`}
+              x={CX - r - 8}
+              y={CY}
+              textAnchor="end"
+              dominantBaseline="middle"
+              fill={track.color}
+              fontSize="10"
+              fontFamily="monospace"
+            >
+              {track.name}
+            </text>
+          );
+        })}
+
         {/* Step dots */}
         {state.tracks.map((track, ti) =>
           track.steps.map((stepVal, si) => {
-            const { x, y } = dotPos(ti, si, track.stepCount);
+            const { x, y } = dotPos(ti, si, track.stepCount, state.swing);
             const isActive = track.currentStep === si;
             const isOn = stepVal > 0;
             const isAccent = stepVal === 2;
@@ -536,6 +648,30 @@ export default function DrumMachine() {
         </label>
       </div>
 
+      {/* Pattern Presets */}
+      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
+        <span style={{ fontSize: '0.7rem', color: '#555', alignSelf: 'center' }}>Presets:</span>
+        {(Object.keys(PRESETS) as PresetName[]).map(name => (
+          <button
+            key={name}
+            onClick={() => {
+              dispatch({ type: 'LOAD_PRESET', preset: name });
+              setEuclidValues(state.tracks.map(() => 0));
+            }}
+            style={{
+              background: '#1e1e2e',
+              color: '#aaa',
+              border: '1px solid #333',
+              borderRadius: '4px',
+              padding: '4px 10px',
+              fontSize: '0.65rem',
+              cursor: 'pointer',
+              fontFamily: 'monospace',
+            }}
+          >{name}</button>
+        ))}
+      </div>
+
       {/* Track controls */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', width: '100%', maxWidth: '600px' }}>
         {state.tracks.map((track, ti) => (
@@ -600,17 +736,9 @@ export default function DrumMachine() {
             <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.65rem', color: '#666', marginLeft: 'auto' }}>
               <span style={{ color: '#444' }}>Euclid:</span>
               <input
-                type="number" min={0} max={track.stepCount} defaultValue={0}
-                onBlur={e => {
-                  const v = Number(e.target.value);
-                  if (v > 0) dispatch({ type: 'APPLY_EUCLIDEAN', track: ti, pulses: v });
-                }}
-                onKeyDown={e => {
-                  if (e.key === 'Enter') {
-                    const v = Number((e.target as HTMLInputElement).value);
-                    if (v > 0) dispatch({ type: 'APPLY_EUCLIDEAN', track: ti, pulses: v });
-                  }
-                }}
+                type="number" min={0} max={track.stepCount}
+                value={euclidValues[ti]}
+                onChange={e => handleEuclidChange(ti, Number(e.target.value))}
                 style={{
                   width: '36px', background: '#111', color: '#aaa',
                   border: '1px solid #333', borderRadius: '3px',
@@ -623,7 +751,7 @@ export default function DrumMachine() {
       </div>
 
       <p style={{ fontSize: '0.65rem', color: '#333', margin: 0 }}>
-        Click dot = toggle on/off · Shift+click = accent · Euclid = enter pulses then press Enter
+        Click dot = toggle on/off · Shift+click = accent · Euclid = change value to apply
       </p>
     </div>
   );

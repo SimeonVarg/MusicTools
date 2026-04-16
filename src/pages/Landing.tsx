@@ -4,20 +4,26 @@ import { motion } from 'framer-motion'
 import * as THREE from 'three'
 import {
   Music, Piano, Activity, Drum, BarChart2, Stars,
-  Headphones, AlignLeft, Target, Wind
+  Headphones, AlignLeft, Target, Wind,
+  GitBranch, Keyboard, BookOpen, Timer, Waves
 } from 'lucide-react'
 
 const TOOLS = [
-  { path: '/circle-of-fifths', name: 'Circle of Fifths',  Icon: Music,        desc: 'Explore key relationships & jazz harmony',  color: '#a855f7', glow: 'rgba(168,85,247,0.35)' },
-  { path: '/chord-builder',    name: 'Chord Builder',     Icon: Piano,        desc: 'Build jazz progressions with voicings',      color: '#3b82f6', glow: 'rgba(59,130,246,0.35)' },
-  { path: '/oscilloscope',     name: 'Oscilloscope',      Icon: Activity,     desc: 'Synthesize & visualize waveforms',           color: '#22c55e', glow: 'rgba(34,197,94,0.35)'  },
-  { path: '/drum-machine',     name: 'Drum Machine',      Icon: Drum,         desc: 'Polyrhythmic circular sequencer',            color: '#f97316', glow: 'rgba(249,115,22,0.35)' },
-  { path: '/spectrum',         name: 'Spectrum Analyzer', Icon: BarChart2,    desc: 'Real-time FFT frequency analysis',           color: '#06b6d4', glow: 'rgba(6,182,212,0.35)'  },
-  { path: '/galaxy-map',       name: 'Galaxy Map',        Icon: Stars,        desc: 'Navigate 35+ scales in 3D space',           color: '#6366f1', glow: 'rgba(99,102,241,0.35)' },
-  { path: '/ear-training',     name: 'Ear Training',      Icon: Headphones,   desc: 'Train your musical ear',                    color: '#eab308', glow: 'rgba(234,179,8,0.35)'  },
-  { path: '/piano-roll',       name: 'Piano Roll',        Icon: AlignLeft,    desc: 'Draw & play MIDI sequences',                color: '#ec4899', glow: 'rgba(236,72,153,0.35)' },
-  { path: '/tuner',            name: 'Tuner',             Icon: Target,       desc: 'Chromatic tuner + overtone series',         color: '#14b8a6', glow: 'rgba(20,184,166,0.35)' },
-  { path: '/ambient',          name: 'Ambient Engine',    Icon: Wind,         desc: 'Generative ambient music',                  color: '#8b5cf6', glow: 'rgba(139,92,246,0.35)' },
+  { path: '/circle-of-fifths',      name: 'Circle of Fifths',       Icon: Music,       desc: 'Explore key relationships & jazz harmony',  color: '#a855f7', glow: 'rgba(168,85,247,0.35)' },
+  { path: '/chord-builder',         name: 'Chord Builder',          Icon: Piano,       desc: 'Build jazz progressions with voicings',      color: '#3b82f6', glow: 'rgba(59,130,246,0.35)' },
+  { path: '/oscilloscope',          name: 'Oscilloscope',           Icon: Activity,    desc: 'Synthesize & visualize waveforms',           color: '#22c55e', glow: 'rgba(34,197,94,0.35)'  },
+  { path: '/drum-machine',          name: 'Drum Machine',           Icon: Drum,        desc: 'Polyrhythmic circular sequencer',            color: '#f97316', glow: 'rgba(249,115,22,0.35)' },
+  { path: '/spectrum',              name: 'Spectrum Analyzer',      Icon: BarChart2,   desc: 'Real-time FFT frequency analysis',           color: '#06b6d4', glow: 'rgba(6,182,212,0.35)'  },
+  { path: '/galaxy-map',            name: 'Galaxy Map',             Icon: Stars,       desc: 'Navigate 35+ scales in 3D space',           color: '#6366f1', glow: 'rgba(99,102,241,0.35)' },
+  { path: '/ear-training',          name: 'Ear Training',           Icon: Headphones,  desc: 'Train your musical ear',                    color: '#eab308', glow: 'rgba(234,179,8,0.35)'  },
+  { path: '/piano-roll',            name: 'Piano Roll',             Icon: AlignLeft,   desc: 'Draw & play MIDI sequences',                color: '#ec4899', glow: 'rgba(236,72,153,0.35)' },
+  { path: '/tuner',                 name: 'Tuner',                  Icon: Target,      desc: 'Chromatic tuner + overtone series',         color: '#14b8a6', glow: 'rgba(20,184,166,0.35)' },
+  { path: '/ambient',               name: 'Ambient Engine',         Icon: Wind,        desc: 'Generative ambient music',                  color: '#8b5cf6', glow: 'rgba(139,92,246,0.35)' },
+  { path: '/progression-analyzer',  name: 'Progression Analyzer',  Icon: GitBranch,   desc: 'Analyze chord progressions & voice leading', color: '#f43f5e', glow: 'rgba(244,63,94,0.35)'  },
+  { path: '/interval-keyboard',     name: 'Interval Keyboard',      Icon: Keyboard,    desc: 'Interactive interval ear training',          color: '#a78bfa', glow: 'rgba(167,139,250,0.35)' },
+  { path: '/scale-practice',        name: 'Scale Practice',         Icon: BookOpen,    desc: 'Learn scales with keyboard & quiz mode',    color: '#34d399', glow: 'rgba(52,211,153,0.35)'  },
+  { path: '/rhythm-trainer',        name: 'Rhythm Trainer',         Icon: Timer,       desc: 'Tap along & measure timing accuracy',       color: '#fb923c', glow: 'rgba(251,146,60,0.35)'  },
+  { path: '/harmonic-series',       name: 'Harmonic Series',        Icon: Waves,       desc: '3D overtone visualizer & timbre builder',   color: '#38bdf8', glow: 'rgba(56,189,248,0.35)'  },
 ]
 
 function useThreeBackground(canvasRef: React.RefObject<HTMLCanvasElement | null>) {

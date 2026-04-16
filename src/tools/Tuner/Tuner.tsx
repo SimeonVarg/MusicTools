@@ -4,8 +4,18 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 const NOTE_NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 const BUFFER_SIZE = 2048;
 
-// Just intonation ratios for partials 1–16
-const JI_RATIOS = [1/1, 2/1, 3/2, 4/3, 5/4, 6/5, 7/4, 8/5, 9/8, 10/9, 11/8, 12/7, 13/8, 14/9, 15/8, 16/9];
+// Harmonic partials 1–16 (fundamental, 2nd harmonic, 3rd harmonic, etc.)
+const HARMONIC_RATIOS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
+const HARMONIC_NAMES = [
+  'Fundamental', 'Octave', 'P5+8va', '2 Octaves',
+  'M3+2×8va', 'P5+2×8va', 'Harm. 7th', '3 Octaves',
+  'M2+3×8va', 'M3+3×8va', 'A4+3×8va', 'P5+3×8va',
+  'm7+3×8va', 'M7+3×8va', 'M7+3×8va', '4 Octaves',
+];
+
+// Just intonation intervals for 12 chromatic semitones
+const JI_INTERVALS = [1/1, 16/15, 9/8, 6/5, 5/4, 4/3, 7/5, 3/2, 8/5, 5/3, 7/4, 15/8];
+const INTERVAL_NAMES = ['Unison','m2','M2','m3','M3','P4','TT','P5','m6','M6','m7','M7'];
 
 // Harmonic colors: warm→cool by harmonic distance
 const HARMONIC_COLORS = [
@@ -157,57 +167,60 @@ function StrobeDisc({ cents, active }: { cents: number; active: boolean }) {
 // ── Harmonic Series Bars ─────────────────────────────────────────────────────
 function HarmonicBars({ fundamental }: { fundamental: number }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'flex-end', gap: 3, height: 80, padding: '0 4px' }}>
-      {JI_RATIOS.map((ratio, i) => {
-        const freq = fundamental * (i + 1);
-        const height = Math.max(8, 80 - i * 4);
-        return (
-          <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-            <div style={{
-              width: 14, height, background: HARMONIC_COLORS[i],
-              borderRadius: '2px 2px 0 0', opacity: 0.85,
-              boxShadow: `0 0 6px ${HARMONIC_COLORS[i]}88`,
-            }} />
-            <span style={{ fontSize: 8, color: '#888', fontFamily: 'monospace' }}>{i + 1}</span>
-            <span style={{ fontSize: 7, color: '#666', fontFamily: 'monospace' }}>{freq < 1000 ? freq.toFixed(0) : (freq / 1000).toFixed(1) + 'k'}</span>
-          </div>
-        );
-      })}
+    <div>
+      <div style={{ fontSize: 11, color: '#666', marginBottom: 6 }}>Integer multiples of the fundamental frequency</div>
+      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 3, height: 80, padding: '0 4px' }}>
+        {HARMONIC_RATIOS.map((n, i) => {
+          const height = Math.max(8, 80 - i * 4);
+          return (
+            <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+              <div style={{
+                width: 14, height, background: HARMONIC_COLORS[i],
+                borderRadius: '2px 2px 0 0', opacity: 0.85,
+                boxShadow: `0 0 6px ${HARMONIC_COLORS[i]}88`,
+              }} />
+              <span style={{ fontSize: 8, color: '#888', fontFamily: 'monospace' }}>{n}/1</span>
+              <span style={{ fontSize: 7, color: '#666', fontFamily: 'monospace' }}>{(fundamental * n).toFixed(0)}Hz</span>
+              <span style={{ fontSize: 6, color: '#555', fontFamily: 'monospace', maxWidth: 28, textAlign: 'center', lineHeight: 1.1 }}>{HARMONIC_NAMES[i]}</span>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
 
 // ── Just vs ET Comparison ────────────────────────────────────────────────────
-function JustVsET({ fundamental, refA }: { fundamental: number; refA: number }) {
-  // ET partial n: fundamental * n (already ET if fundamental is ET)
-  // JI partial n: fundamental * JI_RATIOS[n-1]
-  // Cent diff: 1200 * log2(JI_freq / ET_freq)
+function JustVsET({ fundamental }: { fundamental: number }) {
   return (
-    <div style={{ overflowX: 'auto' }}>
-      <div style={{ display: 'flex', gap: 4, minWidth: 'max-content', padding: '0 4px' }}>
-        {JI_RATIOS.map((ratio, i) => {
-          const n = i + 1;
-          const etFreq = fundamental * n;
-          const jiFreq = fundamental * ratio;
-          const centDiff = 1200 * Math.log2(jiFreq / etFreq);
-          const barH = Math.min(40, Math.abs(centDiff) * 2);
-          const color = centDiff > 0 ? '#44aaff' : '#ff6644';
-          return (
-            <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: 22 }}>
-              <span style={{ fontSize: 7, color: '#aaa', fontFamily: 'monospace', marginBottom: 2 }}>
-                {centDiff >= 0 ? '+' : ''}{centDiff.toFixed(0)}
-              </span>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', height: 44, justifyContent: 'flex-end' }}>
-                {centDiff > 0 && <div style={{ width: 10, height: barH, background: color, borderRadius: 2, opacity: 0.8 }} />}
+    <div>
+      <div style={{ fontSize: 11, color: '#666', marginBottom: 6 }}>Cent differences between pure JI intervals and 12-tone equal temperament</div>
+      <div style={{ overflowX: 'auto' }}>
+        <div style={{ display: 'flex', gap: 4, minWidth: 'max-content', padding: '0 4px' }}>
+          {JI_INTERVALS.map((ratio, i) => {
+            const jiFreq = fundamental * ratio;
+            const etFreq = fundamental * Math.pow(2, i / 12);
+            const centDiff = 1200 * Math.log2(jiFreq / etFreq);
+            const barH = Math.min(40, Math.abs(centDiff) * 2);
+            const color = centDiff > 0 ? '#44aaff' : '#ff6644';
+            return (
+              <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: 32 }}>
+                <span style={{ fontSize: 7, color: '#aaa', fontFamily: 'monospace', marginBottom: 2 }}>
+                  {centDiff >= 0 ? '+' : ''}{centDiff.toFixed(1)}
+                </span>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', height: 44, justifyContent: 'flex-end' }}>
+                  {centDiff > 0 && <div style={{ width: 10, height: barH, background: color, borderRadius: 2, opacity: 0.8 }} />}
+                </div>
+                <div style={{ height: 1, width: 32, background: '#444' }} />
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', height: 44, justifyContent: 'flex-start' }}>
+                  {centDiff < 0 && <div style={{ width: 10, height: barH, background: color, borderRadius: 2, opacity: 0.8 }} />}
+                </div>
+                <span style={{ fontSize: 8, color: '#e8d5a0', fontFamily: 'monospace' }}>{INTERVAL_NAMES[i]}</span>
+                <span style={{ fontSize: 7, color: '#666', fontFamily: 'monospace' }}>{ratio.toFixed(4)}</span>
               </div>
-              <div style={{ height: 1, width: 22, background: '#444' }} />
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', height: 44, justifyContent: 'flex-start' }}>
-                {centDiff < 0 && <div style={{ width: 10, height: barH, background: color, borderRadius: 2, opacity: 0.8 }} />}
-              </div>
-              <span style={{ fontSize: 7, color: '#666', fontFamily: 'monospace' }}>{n}</span>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
     </div>
   );
@@ -396,25 +409,22 @@ export default function Tuner() {
 
       {/* Harmonic series */}
       <div style={{ ...section, marginBottom: 12 }}>
-        <div style={label}>Harmonic Series — First 16 Partials</div>
+        <div style={label}>Harmonic Series</div>
         <HarmonicBars fundamental={fundamental} />
         {/* Overtone ratios */}
         <div style={{ display: 'flex', gap: 3, marginTop: 6, flexWrap: 'wrap' }}>
-          {JI_RATIOS.map((r, i) => {
-            const [num, den] = toFraction(r);
-            return (
-              <span key={i} style={{ fontSize: 8, color: HARMONIC_COLORS[i], fontFamily: 'monospace', background: '#1a1a0a', borderRadius: 3, padding: '1px 3px' }}>
-                {num}/{den}
-              </span>
-            );
-          })}
+          {HARMONIC_RATIOS.map((n, i) => (
+            <span key={i} style={{ fontSize: 8, color: HARMONIC_COLORS[i], fontFamily: 'monospace', background: '#1a1a0a', borderRadius: 3, padding: '1px 3px' }}>
+              {n}/1
+            </span>
+          ))}
         </div>
       </div>
 
       {/* Just vs ET */}
       <div style={{ ...section, marginBottom: 12 }}>
-        <div style={label}>Just Intonation vs Equal Temperament (¢ difference per partial)</div>
-        <JustVsET fundamental={fundamental} refA={refA} />
+        <div style={label}>Just vs Equal Temperament</div>
+        <JustVsET fundamental={fundamental} />
         <div style={{ display: 'flex', gap: 12, marginTop: 6, fontSize: 9, color: '#666' }}>
           <span style={{ color: '#44aaff' }}>▲ JI sharper than ET</span>
           <span style={{ color: '#ff6644' }}>▼ JI flatter than ET</span>
@@ -443,12 +453,3 @@ export default function Tuner() {
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
-function toFraction(r: number): [number, number] {
-  // Convert decimal ratio to simple fraction (max denominator 16)
-  const eps = 1e-6;
-  for (let d = 1; d <= 16; d++) {
-    const n = Math.round(r * d);
-    if (Math.abs(n / d - r) < eps) return [n, d];
-  }
-  return [Math.round(r * 16), 16];
-}

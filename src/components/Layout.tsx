@@ -2,20 +2,26 @@ import { useState } from 'react'
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import {
   Music, Piano, Activity, Drum, BarChart2, Stars,
-  Headphones, AlignLeft, Target, Wind, ChevronLeft, ChevronRight, Home
+  Headphones, AlignLeft, Target, Wind, ChevronLeft, ChevronRight, Home,
+  GitBranch, Keyboard, BookOpen, Timer, Waves
 } from 'lucide-react'
 
 const TOOLS = [
-  { path: '/circle-of-fifths', name: 'Circle of Fifths', Icon: Music,       color: '#a855f7' },
-  { path: '/chord-builder',    name: 'Chord Builder',    Icon: Piano,       color: '#3b82f6' },
-  { path: '/oscilloscope',     name: 'Oscilloscope',     Icon: Activity,    color: '#22c55e' },
-  { path: '/drum-machine',     name: 'Drum Machine',     Icon: Drum,        color: '#f97316' },
-  { path: '/spectrum',         name: 'Spectrum Analyzer',Icon: BarChart2,   color: '#06b6d4' },
-  { path: '/galaxy-map',       name: 'Galaxy Map',       Icon: Stars,       color: '#6366f1' },
-  { path: '/ear-training',     name: 'Ear Training',     Icon: Headphones,  color: '#eab308' },
-  { path: '/piano-roll',       name: 'Piano Roll',       Icon: AlignLeft,   color: '#ec4899' },
-  { path: '/tuner',            name: 'Tuner',            Icon: Target,      color: '#14b8a6' },
-  { path: '/ambient',          name: 'Ambient Engine',   Icon: Wind,        color: '#8b5cf6' },
+  { path: '/circle-of-fifths',     name: 'Circle of Fifths',      Icon: Music,       color: '#a855f7' },
+  { path: '/chord-builder',        name: 'Chord Builder',         Icon: Piano,       color: '#3b82f6' },
+  { path: '/oscilloscope',         name: 'Oscilloscope',          Icon: Activity,    color: '#22c55e' },
+  { path: '/drum-machine',         name: 'Drum Machine',          Icon: Drum,        color: '#f97316' },
+  { path: '/spectrum',             name: 'Spectrum Analyzer',     Icon: BarChart2,   color: '#06b6d4' },
+  { path: '/galaxy-map',           name: 'Galaxy Map',            Icon: Stars,       color: '#6366f1' },
+  { path: '/ear-training',         name: 'Ear Training',          Icon: Headphones,  color: '#eab308' },
+  { path: '/piano-roll',           name: 'Piano Roll',            Icon: AlignLeft,   color: '#ec4899' },
+  { path: '/tuner',                name: 'Tuner',                 Icon: Target,      color: '#14b8a6' },
+  { path: '/ambient',              name: 'Ambient Engine',        Icon: Wind,        color: '#8b5cf6' },
+  { path: '/progression-analyzer', name: 'Progression Analyzer', Icon: GitBranch,   color: '#f43f5e' },
+  { path: '/interval-keyboard',    name: 'Interval Keyboard',     Icon: Keyboard,    color: '#a78bfa' },
+  { path: '/scale-practice',       name: 'Scale Practice',        Icon: BookOpen,    color: '#34d399' },
+  { path: '/rhythm-trainer',       name: 'Rhythm Trainer',        Icon: Timer,       color: '#fb923c' },
+  { path: '/harmonic-series',      name: 'Harmonic Series',       Icon: Waves,       color: '#38bdf8' },
 ]
 
 export default function Layout() {

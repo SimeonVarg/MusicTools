@@ -16,45 +16,46 @@ interface ScaleData {
   genres: string[]
   characteristicNotes: string  // e.g. "raised 4th, flat 7th"
   popularity: number           // 1–5, drives star size
+  description: string          // 1-line teaching note
 }
 
 const SCALES: ScaleData[] = [
-  { id: 0,  name: 'Major (Ionian)',        intervals: [0,2,4,5,7,9,11],    mood: 'bright',  genres: ['pop','classical','jazz'],       characteristicNotes: 'M3, M7',              popularity: 5 },
-  { id: 1,  name: 'Natural Minor (Aeolian)',intervals: [0,2,3,5,7,8,10],   mood: 'dark',    genres: ['rock','classical','metal'],     characteristicNotes: 'm3, m6, m7',          popularity: 5 },
-  { id: 2,  name: 'Dorian',                intervals: [0,2,3,5,7,9,10],   mood: 'dark',    genres: ['jazz','funk','rock'],           characteristicNotes: 'm3, M6',              popularity: 4 },
-  { id: 3,  name: 'Phrygian',              intervals: [0,1,3,5,7,8,10],   mood: 'exotic',  genres: ['flamenco','metal','world'],     characteristicNotes: 'b2, m3',              popularity: 3 },
-  { id: 4,  name: 'Lydian',                intervals: [0,2,4,6,7,9,11],   mood: 'bright',  genres: ['film','jazz','pop'],            characteristicNotes: '#4, M7',              popularity: 3 },
-  { id: 5,  name: 'Mixolydian',            intervals: [0,2,4,5,7,9,10],   mood: 'bright',  genres: ['blues','rock','folk'],          characteristicNotes: 'M3, b7',              popularity: 4 },
-  { id: 6,  name: 'Locrian',               intervals: [0,1,3,5,6,8,10],   mood: 'dark',    genres: ['metal','jazz'],                 characteristicNotes: 'b2, b5',              popularity: 2 },
-  { id: 7,  name: 'Melodic Minor',         intervals: [0,2,3,5,7,9,11],   mood: 'dark',    genres: ['jazz','classical'],             characteristicNotes: 'm3, M6, M7',          popularity: 4 },
-  { id: 8,  name: 'Lydian Dominant',       intervals: [0,2,4,6,7,9,10],   mood: 'bright',  genres: ['jazz','fusion'],               characteristicNotes: '#4, b7',              popularity: 3 },
-  { id: 9,  name: 'Super Locrian (Altered)',intervals: [0,1,3,4,6,8,10],  mood: 'exotic',  genres: ['jazz'],                        characteristicNotes: 'b2, b3, b5, b7',      popularity: 2 },
-  { id: 10, name: 'Harmonic Minor',        intervals: [0,2,3,5,7,8,11],   mood: 'exotic',  genres: ['classical','metal','flamenco'], characteristicNotes: 'm3, m6, M7',          popularity: 4 },
-  { id: 11, name: 'Phrygian Dominant',     intervals: [0,1,4,5,7,8,10],   mood: 'exotic',  genres: ['flamenco','metal','world'],     characteristicNotes: 'b2, M3',              popularity: 3 },
-  { id: 12, name: 'Double Harmonic Major', intervals: [0,1,4,5,7,8,11],   mood: 'exotic',  genres: ['world','metal'],               characteristicNotes: 'b2, M3, m6, M7',      popularity: 2 },
-  { id: 13, name: 'Hungarian Minor',       intervals: [0,2,3,6,7,8,11],   mood: 'exotic',  genres: ['world','classical'],           characteristicNotes: '#4, m6, M7',          popularity: 2 },
-  { id: 14, name: 'Neapolitan Major',      intervals: [0,1,3,5,7,9,11],   mood: 'exotic',  genres: ['classical'],                   characteristicNotes: 'b2, M6, M7',          popularity: 1 },
-  { id: 15, name: 'Neapolitan Minor',      intervals: [0,1,3,5,7,8,11],   mood: 'exotic',  genres: ['classical'],                   characteristicNotes: 'b2, m6, M7',          popularity: 1 },
-  { id: 16, name: 'Persian',               intervals: [0,1,4,5,6,8,11],   mood: 'exotic',  genres: ['world'],                       characteristicNotes: 'b2, M3, b5, m6, M7', popularity: 1 },
-  { id: 17, name: 'Major Pentatonic',      intervals: [0,2,4,7,9],         mood: 'bright',  genres: ['pop','folk','blues','rock'],    characteristicNotes: 'M2, M3, P5, M6',      popularity: 5 },
-  { id: 18, name: 'Minor Pentatonic',      intervals: [0,3,5,7,10],        mood: 'dark',    genres: ['blues','rock','pop'],          characteristicNotes: 'm3, P4, P5, m7',      popularity: 5 },
-  { id: 19, name: 'Blues',                 intervals: [0,3,5,6,7,10],      mood: 'dark',    genres: ['blues','rock','jazz'],         characteristicNotes: 'm3, b5, m7',          popularity: 5 },
-  { id: 20, name: 'Bebop Dominant',        intervals: [0,2,4,5,7,9,10,11], mood: 'bright',  genres: ['jazz','bebop'],               characteristicNotes: 'M7 passing tone',     popularity: 3 },
-  { id: 21, name: 'Whole Tone',            intervals: [0,2,4,6,8,10],      mood: 'exotic',  genres: ['jazz','impressionist'],       characteristicNotes: 'all whole steps',     popularity: 2 },
-  { id: 22, name: 'Diminished (HW)',       intervals: [0,1,3,4,6,7,9,10],  mood: 'dark',    genres: ['jazz','classical'],           characteristicNotes: 'b2, b3, b5, b6',      popularity: 2 },
-  { id: 23, name: 'Diminished (WH)',       intervals: [0,2,3,5,6,8,9,11],  mood: 'dark',    genres: ['jazz','classical'],           characteristicNotes: 'm3, b5, M7',          popularity: 2 },
-  { id: 24, name: 'Augmented',             intervals: [0,3,4,7,8,11],      mood: 'exotic',  genres: ['jazz','classical'],           characteristicNotes: 'M3, #5, M7',          popularity: 1 },
-  { id: 25, name: 'Lydian b7 (Overtone)',  intervals: [0,2,4,6,7,9,10],   mood: 'bright',  genres: ['jazz','fusion'],               characteristicNotes: '#4, b7',              popularity: 2 },
-  { id: 26, name: 'Acoustic',              intervals: [0,2,4,6,7,9,10],   mood: 'bright',  genres: ['jazz','contemporary'],         characteristicNotes: '#4, b7',              popularity: 2 },
-  { id: 27, name: 'Locrian #2',            intervals: [0,2,3,5,6,8,10],   mood: 'dark',    genres: ['jazz'],                        characteristicNotes: 'M2, b5',              popularity: 2 },
-  { id: 28, name: 'Harmonic Major',        intervals: [0,2,4,5,7,8,11],   mood: 'exotic',  genres: ['classical','jazz'],            characteristicNotes: 'M3, m6, M7',          popularity: 2 },
-  { id: 29, name: 'Ukrainian Dorian',      intervals: [0,2,3,6,7,9,10],   mood: 'exotic',  genres: ['world','folk'],               characteristicNotes: '#4, m3',              popularity: 1 },
-  { id: 30, name: 'Enigmatic',             intervals: [0,1,4,6,8,10,11],  mood: 'exotic',  genres: ['classical'],                   characteristicNotes: 'b2, M3, #5, M7',     popularity: 1 },
-  { id: 31, name: 'Prometheus',            intervals: [0,2,4,6,9,10],     mood: 'exotic',  genres: ['classical','impressionist'],   characteristicNotes: '#4, M6, b7',          popularity: 1 },
-  { id: 32, name: 'Hirajoshi',             intervals: [0,2,3,7,8],         mood: 'exotic',  genres: ['world','japanese'],           characteristicNotes: 'm3, P5, m6',          popularity: 2 },
-  { id: 33, name: 'In Scale',              intervals: [0,1,5,7,8],         mood: 'exotic',  genres: ['world','japanese'],           characteristicNotes: 'b2, P4, m6',          popularity: 1 },
-  { id: 34, name: 'Insen',                 intervals: [0,1,5,7,10],        mood: 'exotic',  genres: ['world','japanese'],           characteristicNotes: 'b2, P4, m7',          popularity: 1 },
-  { id: 35, name: 'Iwato',                 intervals: [0,1,5,6,10],        mood: 'exotic',  genres: ['world','japanese'],           characteristicNotes: 'b2, b5, m7',          popularity: 1 },
+  { id: 0,  name: 'Major (Ionian)',        intervals: [0,2,4,5,7,9,11],    mood: 'bright',  genres: ['pop','classical','jazz'],       characteristicNotes: 'M3, M7',              popularity: 5, description: 'The foundation of Western music — bright, resolved, stable' },
+  { id: 1,  name: 'Natural Minor (Aeolian)',intervals: [0,2,3,5,7,8,10],   mood: 'dark',    genres: ['rock','classical','metal'],     characteristicNotes: 'm3, m6, m7',          popularity: 5, description: 'The default minor sound — melancholic, serious, emotionally deep' },
+  { id: 2,  name: 'Dorian',                intervals: [0,2,3,5,7,9,10],   mood: 'dark',    genres: ['jazz','funk','rock'],           characteristicNotes: 'm3, M6',              popularity: 4, description: 'Minor with a raised 6th — jazzy, sophisticated, less dark than natural minor' },
+  { id: 3,  name: 'Phrygian',              intervals: [0,1,3,5,7,8,10],   mood: 'exotic',  genres: ['flamenco','metal','world'],     characteristicNotes: 'b2, m3',              popularity: 3, description: 'Minor with a flat 2nd — Spanish/flamenco flavor, exotic tension' },
+  { id: 4,  name: 'Lydian',                intervals: [0,2,4,6,7,9,11],   mood: 'bright',  genres: ['film','jazz','pop'],            characteristicNotes: '#4, M7',              popularity: 3, description: 'Major with a raised 4th — dreamy, floating, cinematic wonder' },
+  { id: 5,  name: 'Mixolydian',            intervals: [0,2,4,5,7,9,10],   mood: 'bright',  genres: ['blues','rock','folk'],          characteristicNotes: 'M3, b7',              popularity: 4, description: 'Major with a flat 7th — bluesy brightness, classic rock swagger' },
+  { id: 6,  name: 'Locrian',               intervals: [0,1,3,5,6,8,10],   mood: 'dark',    genres: ['metal','jazz'],                 characteristicNotes: 'b2, b5',              popularity: 2, description: 'The darkest mode — unstable diminished tonic, rarely used as a key center' },
+  { id: 7,  name: 'Melodic Minor',         intervals: [0,2,3,5,7,9,11],   mood: 'dark',    genres: ['jazz','classical'],             characteristicNotes: 'm3, M6, M7',          popularity: 4, description: 'Minor with raised 6th and 7th — smooth ascending line, jazz essential' },
+  { id: 8,  name: 'Lydian Dominant',       intervals: [0,2,4,6,7,9,10],   mood: 'bright',  genres: ['jazz','fusion'],               characteristicNotes: '#4, b7',              popularity: 3, description: 'Lydian + Mixolydian hybrid — bright tension over dominant chords' },
+  { id: 9,  name: 'Super Locrian (Altered)',intervals: [0,1,3,4,6,8,10],  mood: 'exotic',  genres: ['jazz'],                        characteristicNotes: 'b2, b3, b5, b7',      popularity: 2, description: 'Every note altered — maximum tension for dominant resolution in jazz' },
+  { id: 10, name: 'Harmonic Minor',        intervals: [0,2,3,5,7,8,11],   mood: 'exotic',  genres: ['classical','metal','flamenco'], characteristicNotes: 'm3, m6, M7',          popularity: 4, description: 'Natural minor with raised 7th — dramatic augmented 2nd gap, classical staple' },
+  { id: 11, name: 'Phrygian Dominant',     intervals: [0,1,4,5,7,8,10],   mood: 'exotic',  genres: ['flamenco','metal','world'],     characteristicNotes: 'b2, M3',              popularity: 3, description: '5th mode of harmonic minor — Middle Eastern/flamenco, major chord on a Phrygian root' },
+  { id: 12, name: 'Double Harmonic Major', intervals: [0,1,4,5,7,8,11],   mood: 'exotic',  genres: ['world','metal'],               characteristicNotes: 'b2, M3, m6, M7',      popularity: 2, description: 'Two augmented 2nd gaps — intensely Middle Eastern, Byzantine sound' },
+  { id: 13, name: 'Hungarian Minor',       intervals: [0,2,3,6,7,8,11],   mood: 'exotic',  genres: ['world','classical'],           characteristicNotes: '#4, m6, M7',          popularity: 2, description: 'Harmonic minor with raised 4th — dark, dramatic Eastern European color' },
+  { id: 14, name: 'Neapolitan Major',      intervals: [0,1,3,5,7,9,11],   mood: 'exotic',  genres: ['classical'],                   characteristicNotes: 'b2, M6, M7',          popularity: 1, description: 'Major scale with a flat 2nd — rare classical color, hauntingly bright' },
+  { id: 15, name: 'Neapolitan Minor',      intervals: [0,1,3,5,7,8,11],   mood: 'exotic',  genres: ['classical'],                   characteristicNotes: 'b2, m6, M7',          popularity: 1, description: 'Harmonic minor with a flat 2nd — dark classical drama, operatic tension' },
+  { id: 16, name: 'Persian',               intervals: [0,1,4,5,6,8,11],   mood: 'exotic',  genres: ['world'],                       characteristicNotes: 'b2, M3, b5, m6, M7', popularity: 1, description: 'Dense chromatic clusters — ancient Persian mysticism, deeply exotic' },
+  { id: 17, name: 'Major Pentatonic',      intervals: [0,2,4,7,9],         mood: 'bright',  genres: ['pop','folk','blues','rock'],    characteristicNotes: 'M2, M3, P5, M6',      popularity: 5, description: 'Five bright notes, no tension — universally pleasant, folk and pop backbone' },
+  { id: 18, name: 'Minor Pentatonic',      intervals: [0,3,5,7,10],        mood: 'dark',    genres: ['blues','rock','pop'],          characteristicNotes: 'm3, P4, P5, m7',      popularity: 5, description: 'Five notes, pure minor feel — the most-used scale in rock and blues soloing' },
+  { id: 19, name: 'Blues',                 intervals: [0,3,5,6,7,10],      mood: 'dark',    genres: ['blues','rock','jazz'],         characteristicNotes: 'm3, b5, m7',          popularity: 5, description: 'Minor pentatonic + blue note (b5) — the soul of blues and rock' },
+  { id: 20, name: 'Bebop Dominant',        intervals: [0,2,4,5,7,9,10,11], mood: 'bright',  genres: ['jazz','bebop'],               characteristicNotes: 'M7 passing tone',     popularity: 3, description: 'Mixolydian + chromatic passing tone — keeps chord tones on the beat in jazz lines' },
+  { id: 21, name: 'Whole Tone',            intervals: [0,2,4,6,8,10],      mood: 'exotic',  genres: ['jazz','impressionist'],       characteristicNotes: 'all whole steps',     popularity: 2, description: 'All whole steps, no half steps — dreamlike, suspended, Debussy\'s signature' },
+  { id: 22, name: 'Diminished (HW)',       intervals: [0,1,3,4,6,7,9,10],  mood: 'dark',    genres: ['jazz','classical'],           characteristicNotes: 'b2, b3, b5, b6',      popularity: 2, description: 'Alternating half-whole steps — symmetric, tense, used over diminished chords' },
+  { id: 23, name: 'Diminished (WH)',       intervals: [0,2,3,5,6,8,9,11],  mood: 'dark',    genres: ['jazz','classical'],           characteristicNotes: 'm3, b5, M7',          popularity: 2, description: 'Alternating whole-half steps — symmetric dominant color, jazz improvisation tool' },
+  { id: 24, name: 'Augmented',             intervals: [0,3,4,7,8,11],      mood: 'exotic',  genres: ['jazz','classical'],           characteristicNotes: 'M3, #5, M7',          popularity: 1, description: 'Symmetric scale built on augmented triads — shimmering, otherworldly' },
+  { id: 25, name: 'Lydian b7 (Overtone)',  intervals: [0,2,4,6,7,9,10],   mood: 'bright',  genres: ['jazz','fusion'],               characteristicNotes: '#4, b7',              popularity: 2, description: 'Mirrors the natural overtone series — bright and harmonically resonant' },
+  { id: 26, name: 'Acoustic',              intervals: [0,2,4,6,7,9,10],   mood: 'bright',  genres: ['jazz','contemporary'],         characteristicNotes: '#4, b7',              popularity: 2, description: 'Derived from the overtone series — Bartók\'s favorite, naturally bright' },
+  { id: 27, name: 'Locrian #2',            intervals: [0,2,3,5,6,8,10],   mood: 'dark',    genres: ['jazz'],                        characteristicNotes: 'M2, b5',              popularity: 2, description: 'Locrian with a natural 2nd — less harsh, usable over half-diminished chords' },
+  { id: 28, name: 'Harmonic Major',        intervals: [0,2,4,5,7,8,11],   mood: 'exotic',  genres: ['classical','jazz'],            characteristicNotes: 'M3, m6, M7',          popularity: 2, description: 'Major scale with a flat 6th — bittersweet, unexpectedly dark major color' },
+  { id: 29, name: 'Ukrainian Dorian',      intervals: [0,2,3,6,7,9,10],   mood: 'exotic',  genres: ['world','folk'],               characteristicNotes: '#4, m3',              popularity: 1, description: 'Dorian with a raised 4th — Eastern European folk, klezmer flavor' },
+  { id: 30, name: 'Enigmatic',             intervals: [0,1,4,6,8,10,11],  mood: 'exotic',  genres: ['classical'],                   characteristicNotes: 'b2, M3, #5, M7',     popularity: 1, description: 'Verdi\'s invention — deliberately strange, resists tonal gravity' },
+  { id: 31, name: 'Prometheus',            intervals: [0,2,4,6,9,10],     mood: 'exotic',  genres: ['classical','impressionist'],   characteristicNotes: '#4, M6, b7',          popularity: 1, description: 'Scriabin\'s mystic chord as a scale — six notes, floating and unresolved' },
+  { id: 32, name: 'Hirajoshi',             intervals: [0,2,3,7,8],         mood: 'exotic',  genres: ['world','japanese'],           characteristicNotes: 'm3, P5, m6',          popularity: 2, description: 'Japanese pentatonic — sparse, melancholic, evokes koto and zen gardens' },
+  { id: 33, name: 'In Scale',              intervals: [0,1,5,7,8],         mood: 'exotic',  genres: ['world','japanese'],           characteristicNotes: 'b2, P4, m6',          popularity: 1, description: 'Japanese miyako-bushi — haunting, used in traditional court music' },
+  { id: 34, name: 'Insen',                 intervals: [0,1,5,7,10],        mood: 'exotic',  genres: ['world','japanese'],           characteristicNotes: 'b2, P4, m7',          popularity: 1, description: 'Japanese pentatonic with b2 — dark, meditative, shakuhachi flute sound' },
+  { id: 35, name: 'Iwato',                 intervals: [0,1,5,6,10],        mood: 'exotic',  genres: ['world','japanese'],           characteristicNotes: 'b2, b5, m7',          popularity: 1, description: 'The darkest Japanese pentatonic — dissonant, eerie, tritone-based' },
 ]
 
 // ─── Harmonic similarity → 3D positions ──────────────────────────────────────
@@ -70,6 +71,8 @@ function similarity(a: ScaleData, b: ScaleData): number {
   sa.forEach(n => { if (sb.has(n)) shared++ })
   return shared / Math.max(sa.size, sb.size)
 }
+
+const MDS_ITERATIONS = 40
 
 // Simple MDS-like layout: place each scale by its average distance to others
 function computePositions(scales: ScaleData[]): THREE.Vector3[] {
@@ -89,7 +92,7 @@ function computePositions(scales: ScaleData[]): THREE.Vector3[] {
     )
   })
   // Stress minimization iterations
-  for (let iter = 0; iter < 80; iter++) {
+  for (let iter = 0; iter < MDS_ITERATIONS; iter++) {
     for (let i = 0; i < n; i++) {
       const force = new THREE.Vector3()
       for (let j = 0; j < n; j++) {
@@ -108,11 +111,11 @@ function computePositions(scales: ScaleData[]): THREE.Vector3[] {
 
 // ─── Constellation edges (connect scales with similarity > threshold) ─────────
 
-function computeEdges(scales: ScaleData[], positions: THREE.Vector3[]): [number, number][] {
+function computeEdges(scales: ScaleData[], positions: THREE.Vector3[], threshold: number): [number, number][] {
   const edges: [number, number][] = []
   for (let i = 0; i < scales.length; i++) {
     for (let j = i + 1; j < scales.length; j++) {
-      if (similarity(scales[i], scales[j]) >= 0.6) {
+      if (similarity(scales[i], scales[j]) >= threshold) {
         edges.push([i, j])
       }
     }
@@ -134,7 +137,7 @@ interface StarProps {
   scale: ScaleData
   position: THREE.Vector3
   selected: boolean
-  onClick: () => void
+  onClick: (shiftKey: boolean) => void
 }
 
 function Star({ scale, position, selected, onClick }: StarProps) {
@@ -157,7 +160,7 @@ function Star({ scale, position, selected, onClick }: StarProps) {
     <mesh
       ref={meshRef}
       position={position}
-      onClick={(e) => { e.stopPropagation(); onClick() }}
+      onClick={(e) => { e.stopPropagation(); onClick((e as any).nativeEvent?.shiftKey ?? (e as any).shiftKey ?? false) }}
     >
       <sphereGeometry args={[baseSize, 12, 12]} />
       <meshStandardMaterial
@@ -227,7 +230,7 @@ interface SceneProps {
   positions: THREE.Vector3[]
   edges: [number, number][]
   selectedId: number | null
-  onSelect: (id: number) => void
+  onSelect: (id: number, shiftKey: boolean) => void
 }
 
 function Scene({ visibleScales, positions, edges, selectedId, onSelect }: SceneProps) {
@@ -272,7 +275,7 @@ function Scene({ visibleScales, positions, edges, selectedId, onSelect }: SceneP
             scale={scale}
             position={pos}
             selected={selectedId === scale.id}
-            onClick={() => onSelect(scale.id)}
+            onClick={(shiftKey) => onSelect(scale.id, shiftKey)}
           />
         )
       })}
@@ -316,9 +319,20 @@ async function playScale(intervals: number[]) {
 
 const NOTE_NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B']
 
-function HUD({ scale, onPlay, onClose }: { scale: ScaleData; onPlay: () => void; onClose: () => void }) {
+function HUD({ scale, compareScale, onPlay, onClose }: { scale: ScaleData; compareScale: ScaleData | null; onPlay: () => void; onClose: () => void }) {
   const notes = scale.intervals.map(i => NOTE_NAMES[i % 12]).join('  ')
   const intervalNames = scale.intervals.map(i => i === 0 ? 'R' : `+${i}`).join('  ')
+
+  // Compare mode helpers
+  const scaleSet = pitchClassSet(scale.intervals)
+  const compareSet = compareScale ? pitchClassSet(compareScale.intervals) : null
+
+  const renderCompareNotes = (s: ScaleData, otherSet: Set<number> | null) =>
+    s.intervals.map((iv, i) => {
+      const pc = iv % 12
+      const color = otherSet ? (otherSet.has(pc) ? '#44ff88' : '#ff4466') : '#e0e0ff'
+      return <span key={i} style={{ color }}>{NOTE_NAMES[pc]}  </span>
+    })
 
   return (
     <div style={{
@@ -326,31 +340,61 @@ function HUD({ scale, onPlay, onClose }: { scale: ScaleData; onPlay: () => void;
       background: 'rgba(8,8,24,0.88)', border: '1px solid rgba(120,120,255,0.4)',
       borderRadius: 12, padding: '16px 24px', color: '#e0e0ff', minWidth: 320,
       backdropFilter: 'blur(8px)', pointerEvents: 'auto',
+      display: 'flex', gap: compareScale ? 24 : 0,
     }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <div>
-          <div style={{ fontSize: 18, fontWeight: 700, color: MOOD_COLOR[scale.mood] }}>{scale.name}</div>
-          <div style={{ fontSize: 12, opacity: 0.6, marginTop: 2 }}>
-            {scale.mood.toUpperCase()} · {scale.genres.join(', ')}
+      {/* Primary scale */}
+      <div style={{ flex: 1 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: MOOD_COLOR[scale.mood] }}>{scale.name}</div>
+            <div style={{ fontSize: 12, opacity: 0.6, marginTop: 2 }}>
+              {scale.mood.toUpperCase()} · {scale.genres.join(', ')}
+            </div>
           </div>
+          {!compareScale && <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', fontSize: 18 }}>✕</button>}
         </div>
-        <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', fontSize: 18 }}>✕</button>
+        <div style={{ marginTop: 10, fontFamily: 'monospace', fontSize: 13 }}>
+          <div><span style={{ opacity: 0.5 }}>Notes: </span>{compareScale ? renderCompareNotes(scale, compareSet) : notes}</div>
+          <div><span style={{ opacity: 0.5 }}>Intervals: </span>{intervalNames}</div>
+          <div><span style={{ opacity: 0.5 }}>Characteristic: </span>{scale.characteristicNotes}</div>
+          <div style={{ marginTop: 4, fontSize: 12, fontStyle: 'italic', opacity: 0.7, fontFamily: 'system-ui, sans-serif' }}>{scale.description}</div>
+        </div>
+        <button
+          onClick={onPlay}
+          style={{
+            marginTop: 12, padding: '6px 18px', borderRadius: 6,
+            background: MOOD_COLOR[scale.mood], border: 'none', color: '#000',
+            fontWeight: 700, cursor: 'pointer', fontSize: 13,
+          }}
+        >
+          ▶ Play Scale
+        </button>
       </div>
-      <div style={{ marginTop: 10, fontFamily: 'monospace', fontSize: 13 }}>
-        <div><span style={{ opacity: 0.5 }}>Notes: </span>{notes}</div>
-        <div><span style={{ opacity: 0.5 }}>Intervals: </span>{intervalNames}</div>
-        <div><span style={{ opacity: 0.5 }}>Characteristic: </span>{scale.characteristicNotes}</div>
-      </div>
-      <button
-        onClick={onPlay}
-        style={{
-          marginTop: 12, padding: '6px 18px', borderRadius: 6,
-          background: MOOD_COLOR[scale.mood], border: 'none', color: '#000',
-          fontWeight: 700, cursor: 'pointer', fontSize: 13,
-        }}
-      >
-        ▶ Play Scale
-      </button>
+
+      {/* Compare scale */}
+      {compareScale && (
+        <>
+          <div style={{ width: 1, background: 'rgba(120,120,255,0.3)' }} />
+          <div style={{ flex: 1 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#44ff88', marginBottom: 4 }}>⬡ Compare</div>
+                <div style={{ fontSize: 18, fontWeight: 700, color: MOOD_COLOR[compareScale.mood] }}>{compareScale.name}</div>
+                <div style={{ fontSize: 12, opacity: 0.6, marginTop: 2 }}>
+                  {compareScale.mood.toUpperCase()} · {compareScale.genres.join(', ')}
+                </div>
+              </div>
+              <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', fontSize: 18 }}>✕</button>
+            </div>
+            <div style={{ marginTop: 10, fontFamily: 'monospace', fontSize: 13 }}>
+              <div><span style={{ opacity: 0.5 }}>Notes: </span>{renderCompareNotes(compareScale, scaleSet)}</div>
+              <div><span style={{ opacity: 0.5 }}>Intervals: </span>{compareScale.intervals.map(i => i === 0 ? 'R' : `+${i}`).join('  ')}</div>
+              <div><span style={{ opacity: 0.5 }}>Characteristic: </span>{compareScale.characteristicNotes}</div>
+              <div style={{ marginTop: 4, fontSize: 12, fontStyle: 'italic', opacity: 0.7, fontFamily: 'system-ui, sans-serif' }}>{compareScale.description}</div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   )
 }
@@ -359,13 +403,15 @@ function HUD({ scale, onPlay, onClose }: { scale: ScaleData; onPlay: () => void;
 
 export default function GalaxyMap() {
   const [selectedId, setSelectedId] = useState<number | null>(null)
+  const [compareId, setCompareId] = useState<number | null>(null)
   const [search, setSearch] = useState('')
   const [filterMood, setFilterMood] = useState<Mood | 'all'>('all')
   const [filterNotes, setFilterNotes] = useState<number | 'all'>('all')
   const [filterGenre, setFilterGenre] = useState('all')
+  const [simThreshold, setSimThreshold] = useState(0.6)
 
   const positions = useMemo(() => computePositions(SCALES), [])
-  const edges = useMemo(() => computeEdges(SCALES, positions), [positions])
+  const edges = useMemo(() => computeEdges(SCALES, positions, simThreshold), [positions, simThreshold])
 
   const allGenres = useMemo(() => {
     const g = new Set<string>()
@@ -387,10 +433,16 @@ export default function GalaxyMap() {
   }), [search, filterMood, filterNotes, filterGenre])
 
   const selectedScale = selectedId !== null ? SCALES.find(s => s.id === selectedId) ?? null : null
+  const compareScale = compareId !== null ? SCALES.find(s => s.id === compareId) ?? null : null
 
-  const handleSelect = useCallback((id: number) => {
-    setSelectedId(prev => prev === id ? null : id)
-  }, [])
+  const handleSelect = useCallback((id: number, shiftKey: boolean) => {
+    if (shiftKey && selectedId !== null && selectedId !== id) {
+      setCompareId(id)
+    } else {
+      setSelectedId(prev => prev === id ? null : id)
+      setCompareId(null)
+    }
+  }, [selectedId])
 
   const selectStyle: React.CSSProperties = {
     background: 'rgba(8,8,24,0.85)', border: '1px solid rgba(120,120,255,0.3)',
@@ -426,6 +478,13 @@ export default function GalaxyMap() {
           {allGenres.map(g => <option key={g} value={g}>{g === 'all' ? 'All genres' : g}</option>)}
         </select>
         <span style={{ color: '#6666aa', fontSize: 11 }}>{visibleScales.length} / {SCALES.length} scales</span>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#8888cc', fontSize: 11 }}>
+          Sim ≥ {simThreshold.toFixed(2)}
+          <input type="range" min="0.3" max="0.95" step="0.05" value={simThreshold}
+            onChange={e => setSimThreshold(Number(e.target.value))}
+            style={{ width: 80, accentColor: '#8888ff' }}
+          />
+        </label>
       </div>
 
       {/* Title */}
@@ -471,8 +530,9 @@ export default function GalaxyMap() {
       {selectedScale && (
         <HUD
           scale={selectedScale}
+          compareScale={compareScale}
           onPlay={() => playScale(selectedScale.intervals)}
-          onClose={() => setSelectedId(null)}
+          onClose={() => { setSelectedId(null); setCompareId(null) }}
         />
       )}
     </div>
