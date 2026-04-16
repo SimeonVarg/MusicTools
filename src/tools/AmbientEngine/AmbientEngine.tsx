@@ -458,7 +458,7 @@ export default function AmbientEngine() {
     <div style={{ minHeight: '100vh', background: bg, color: '#fff', fontFamily: 'system-ui, sans-serif' }}>
       {/* Three.js Background */}
       <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, pointerEvents: 'none' }}>
-        <Canvas camera={{ position: [0, 0, 15], fov: 60 }}>
+        <Canvas camera={{ position: [0, 0, 15], fov: 60 }} style={{ pointerEvents: 'none' }}>
           <ambientLight intensity={0.5} />
           <Particles amplitude={amplitude} colors={particleColors} />
         </Canvas>
